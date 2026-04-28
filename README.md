@@ -1,8 +1,8 @@
-# spec-driven-test
+# spec-test.skill
 
-> A Claude skill that helps small teams and individual developers run rigorous end-to-end tests on web applications, using a specification-based testing methodology.
+> A skill that helps small teams and individual developers run rigorous end-to-end tests on web applications, using a specification-based testing methodology.
 >
-> 一个 Claude skill,帮助小团队和个人开发者用规约驱动测试(specification-based testing)的方法对 web 应用做严谨的端到端(E2E)测试。
+> 一个 skill,帮助小团队和个人开发者用规约驱动测试(specification-based testing)的方法对 web 应用做严谨的端到端(E2E)测试。
 
 ---
 
@@ -74,7 +74,7 @@ If you have a usage question that isn't a bug, please still open an Issue — od
 
 ### 这个 skill 是做什么的
 
-`spec-driven-test` 把"写点 E2E 测试"这件事拆成一套严谨的三阶段流程,由三个 Claude agent 协作完成,中间还有两道人类 review 把关:
+`spec-driven-test` 把"写点 E2E 测试"这件事拆成一套严谨的三阶段流程,由三个 agent 协作完成,中间还有两道人类 review 把关:
 
 1. **Cartographer(制图师)** 读你的代码,产出被测功能的**规约**(spec),再把规约翻译成具体的**测试用例**。
 2. **Inspector(检查员)** 用一套测试方法论(边界值分析、等价类划分、决策表、状态迁移、用例测试、Right-BICEP)和场景模式清单审查测试用例,输出 P0 / P1 / P2 分级反馈。
