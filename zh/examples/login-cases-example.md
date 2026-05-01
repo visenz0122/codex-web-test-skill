@@ -2,8 +2,19 @@
 
 > 这是 `login-spec-example.md` 对应的测试用例样例。
 > 展示用例文档的关键字段:Resource Dependency Matrix / Scenario Pattern Coverage Self-Check /
-> Operator-mode / Screenshot points / Destructive。
+> Codex-tool-plan / viewport evidence / Screenshot points / Destructive。
 > 为了简洁,这里只展示 5 个代表性 TC,真实情况下会有 10+ 个。
+
+## Quick Feature Test Usage
+
+如果只是验证"登录按钮能不能提交 / 错误提示是否出现",Coordinator 可以选择 Quick Feature Test:
+
+- Browser Use 打开 `/login`,记录实际 viewport。
+- 走一条成功或失败登录路径。
+- 收集截图、console/dialog 摘要和简短失败分类。
+- 不强制生成完整 spec / Inspector 文档。
+
+下面从 Full Flow Test 角度展示完整用例写法。
 
 ## Coverage Summary
 
@@ -36,7 +47,7 @@
 | 等价类(无效输入代表:邮箱格式错) | ⚠ | 工具能力——前端 HTML5 type=email 校验阻断提交,后端不会收到无效邮箱 |
 | 边界值(密码长度 8 / 64) | ⚠ | 本期未测——见 §3.4b 工程边界(密码强度实时反馈) |
 | XSS 注入测试(`<script>` 输入) | ✗ | spec §3.4a 未列;但 INV-S2 间接覆盖(响应不暴露内部错误) |
-| 表单 disabled 状态视觉切换 | ✓ | TC-004(账号锁定后按钮变灰,Operator-mode A) |
+| 表单 disabled 状态视觉切换 | ✓ | TC-004(账号锁定后按钮变灰,需 Browser Use + Screenshot Review) |
 
 ### 模式 2: 用户认证 / 会话管理(spec §4 标注)
 
@@ -66,6 +77,16 @@
 | 服务器 5xx 错误 | ⚠ | 同上,需要 mock |
 | 限流(429)响应处理 | ✓ | TC-004 |
 
+## Codex Execution Contract
+
+- **Default viewport**: desktop 1280x800。若 Codex 小窗口截图用于辅助观察,报告必须标注为 `small-codex-viewport evidence`,不能直接判定桌面布局 bug。
+- **Browser Use**: 登录表单交互、错误提示和按钮 disabled 状态的默认功能验证工具。
+- **Playwright Script**: 成功登录、cookie、session、限流计数等稳定复跑和数据断言。
+- **Browser Use + Screenshot Review**: 错误提示样式、按钮 disabled 视觉、表单布局。
+- **Computer Use**: 本示例不需要;除非出现系统文件选择器、下载目录或桌面弹窗。
+- **Supabase Verify**: 仅在项目使用 Supabase 时作为 sessions / rate_limit 的辅助 server_state verify。
+- **API/Security Supplemental**: 邮箱枚举、非法状态转移等绕过 UI 的安全补充测试,不能替代普通登录触发动作。
+
 ## Test Cases
 
 ### TC-001: 已注册用户用正确密码成功登录
@@ -74,9 +95,10 @@
 - **References**: B1, INV-C1, INV-C3
 - **Method applied**: Equivalence Partitioning - 有效输入代表
 - **Destructive**: yes
-- **Operator-mode**: B
+- **Codex-tool-plan**: Playwright Script + Supabase Verify
+- **Viewport target**: desktop 1280x800
 
-<!-- 主路径只断言数据传递正确(URL / cookie / SQL),无视觉判断 → mode B 纯 Playwright -->
+<!-- 主路径以 URL / cookie / SQL 数据断言为主,视觉不是核心 → Playwright Script 稳定复跑,必要时用 Supabase Verify 查 server_state -->
 
 **Preconditions**
 
@@ -120,9 +142,10 @@
 - **References**: B2, INV-X1
 - **Method applied**: Equivalence Partitioning - 错误密码代表
 - **Destructive**: yes(失败计数器 +1)
-- **Operator-mode**: C
+- **Codex-tool-plan**: Browser Use + Screenshot Review + Playwright Script + Supabase Verify
+- **Viewport target**: desktop 1280x800
 
-<!-- 既要测后端"sessions 不新增"(数据),又要测前端"错误提示样式"(视觉) → mode C -->
+<!-- 既要测后端"sessions 不新增"(数据),又要测前端"错误提示样式"(视觉) → Browser Use / Playwright / Screenshot Review 组合 -->
 
 **Screenshot points**
 
@@ -172,9 +195,10 @@
 - **References**: B3, INV-X1
 - **Method applied**: 测等价行为 invariant
 - **Destructive**: yes(失败计数器 +1)
-- **Operator-mode**: B
+- **Codex-tool-plan**: Playwright Script + API/Security Supplemental
+- **Viewport target**: desktop 1280x800
 
-<!-- 纯数据断言:验证 response_status / body / time 与 TC-002 相同 → mode B -->
+<!-- 纯数据断言:验证 response_status / body / time 与 TC-002 相同 → Playwright / API 安全补充 -->
 
 **Preconditions**
 
@@ -212,9 +236,10 @@
 - **References**: B4
 - **Method applied**: Boundary Value Analysis - 边界 5
 - **Destructive**: yes(用户状态变 locked)
-- **Operator-mode**: C
+- **Codex-tool-plan**: Browser Use + Screenshot Review + Playwright Script
+- **Viewport target**: desktop 1280x800
 
-<!-- 既要验证后端 locked_until 字段(数据),又要看按钮变灰视觉切换(渲染) → mode C -->
+<!-- 既要验证后端 locked_until 字段(数据),又要看按钮变灰视觉切换(渲染) → Playwright + Screenshot Review -->
 
 **Screenshot points**
 
@@ -266,9 +291,10 @@
 - **References**: INV-X1
 - **Method applied**: Right-BICEP - Cross-check
 - **Destructive**: no(只是对比 TC-002 和 TC-003 的结果)
-- **Operator-mode**: B
+- **Codex-tool-plan**: Playwright Script + API/Security Supplemental
+- **Viewport target**: desktop 1280x800
 
-<!-- 跨 TC 对比响应一致性,纯数据 → mode B -->
+<!-- 跨 TC 对比响应一致性,纯数据 → Playwright + API/Security Supplemental -->
 
 **Preconditions**
 

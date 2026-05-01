@@ -17,6 +17,7 @@ The workflow has multiple steps, **read the corresponding steps for your current
   + §1.6: Out of Scope engineering boundary review
   + §1.7: Resource Dependency Matrix review(circular dependency detection)
   + §1.8: E2E perspective review(Whether Steps are written from user perspective)
+  + §1.9: Codex-tool-plan + viewport evidence review
   + §2: Select methodology based on functional characteristics — then **only read the matching** `references/scenarios/<corresponding file>.md`, don't read all 6
   + §2.5: Check the reasonableness of spec "logical rationale"
   + §3: Severity level classification(P0/P1/P2)
@@ -150,7 +151,7 @@ Hard cross-checking will produce lots of false positives. Your job is to **revie
 - TC and checklist item don't match(claims to cover emoji but TC uses plain Chinese) → **P0**(false coverage)
 
 **C. ⚠ items("not covered" whether reason is reasonable)** — Examine reason itself, don't decide for Cartographer whether to test
-- Concrete and independently verifiable("Claude in Chrome doesn't support IME half-finished state") → Pass
+- Concrete and independently verifiable("Browser Use / Playwright doesn't support IME half-finished state") → Pass
 - Vague("not important" / "not testing this round" / "complex implementation") → **P1**(make reason concrete)
 - Reason can be refuted by spec → **P0**(reason doesn't hold up)
 
@@ -294,6 +295,38 @@ After LLM is prohibited from "directly calling API" it will find alternative wor
 
 Key to distinguish: **Is the "equivalent implementation" LLM proposed real user behavior?** If not → All escapes.
 
+### 1.9 Codex-tool-plan + viewport evidence review
+
+Review whether the test cases can actually run well inside Codex and whether visual evidence is trustworthy.
+
+#### A. Required fields
+
+- Full Flow TC must include `Codex-tool-plan`.
+- TC with screenshot or visual/layout assertions must include `Viewport target`.
+- TC using Screenshot Review must include `Screenshot points` and concrete `llm_judges`.
+- Execution report must distinguish normal desktop evidence from `small-codex-viewport evidence`.
+
+#### B. Tool boundary checks
+
+| Plan item | Compliance check |
+|---|---|
+| Browser Use | Appropriate default for web UI operations |
+| Playwright Script | Used for repeatable large flows, traces, stable assertions |
+| Browser Use + Screenshot Review | Used when visual/layout/rendering judgment matters |
+| Computer Use | Only OS-level / outside-browser actions; not ordinary web clicks |
+| Supabase Verify | Setup/schema/server_state helper only; not the feature theme |
+| API/Security Supplemental | Security supplement only; ordinary trigger remains browser UI |
+
+#### C. Viewport severity
+
+- Missing `Codex-tool-plan` → **P0**
+- Only legacy `Operator-mode` exists, no `Codex-tool-plan` → **P0**
+- Screenshot used to claim desktop layout failure without viewport record → **P1**
+- Small Codex-window screenshot used as desktop failure evidence without `small-codex-viewport evidence` marker → **P0**
+- Responsive test mixes desktop/tablet/mobile screenshots into one conclusion → **P1**
+
+---
+
 ### 2. Select methodology based on functional characteristics
 
 **Important principle**: Don't run all methodologies. 1-3 methodologies per feature is normal, all of them almost never happens.
@@ -399,6 +432,8 @@ Each finding must be classified:
   - **TC's Steps field entirely API calls / SQL / curl etc.**(degraded E2E to API testing)
   - **TC's Steps mixed with 1 or more API calls as "fast path"**(partially degraded to API testing)
   - **Steps use vague language to bypass E2E perspective constraint**(such as "drive frontend proxy", "inject SSE helper", "call vue method trigger", "dispatchEvent simulate click")
+  - **TC lacks `Codex-tool-plan`**(or only has legacy `Operator-mode`)
+  - **Small Codex-window screenshot is used as desktop layout failure evidence without limitation marker**
 
 - **P1**: Recommend fixing, Cartographer can fill rationale to decide not to fix.
   - Equivalence class partition has omission
@@ -410,6 +445,9 @@ Each finding must be classified:
   - **Reachability field missing**
   - **In scenario pattern self-check, ⚠ item reason vague**(such as "not important", "not testing this round", "complex implementation", no reference to tool capability or concrete decision rationale)
   - **In scenario pattern self-check, ✗ item code rationale vague**("code doesn't support" kind without citing specific location)
+  - **TC with screenshot/visual assertion lacks `Viewport target` or evidence plan**
+  - **Computer Use is selected for ordinary web clicks without OS-level reason**
+  - **Supabase Verify is listed without setup/schema/server_state purpose**
   - **In scenario pattern self-check, ✓ item coverage depth insufficient**(TC just "happens to use" checklist item, no explicit assertion for it)
   - **§3.4a business boundary item reason not to test vague**("teaching prototype", "not important" etc.)
   - **§3.4b engineering boundary item format incomplete**(missing known risk / alternative means field, or field hollow)

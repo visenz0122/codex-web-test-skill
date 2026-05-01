@@ -1,6 +1,6 @@
 # Feature: 用户登录
 
-> 这是一个**样例**,展示按 spec-driven-test skill 范式设计的规约长什么样。
+> 这是一个**样例**,展示按 codex-web-test skill 范式设计的规约长什么样。
 > Cartographer 在阶段 1 生成规约时可以参考这个样例的结构。
 > 注意:这份样例假设了一个虚构的产品,描述的字段值仅作演示。
 
@@ -198,8 +198,8 @@
     检查返回对象的 `httpOnly` 和 `secure` 字段为 true。
   - **❌ 不要用** `document.cookie`(浏览器 JS API)验证——HttpOnly cookie 的定义本身就是 JS 读不到,
     用 JS 验证只能确认"读不到",但**不能区分**"HttpOnly 生效"和"cookie 根本没设置"。
-  - **Operator-mode 提示**:本 invariant 几乎要求 Operator-mode B 或 C(需要 Playwright 访问 cookies API);
-    纯 mode A(LLM 浏览器)不便验证此项,可在场景模式自检表标 ⚠ + 工具能力理由
+  - **Codex-tool-plan 提示**:本 invariant 几乎要求 Playwright Script(需要 Playwright 访问 cookies API);
+    纯 Browser Use 不便验证此项,可在场景模式自检表标 ⚠ + 工具能力理由
 
 #### Server-side invariants
 
@@ -312,7 +312,7 @@
 #### 3.4b 工程边界(该测但本期没法测)
 
 - **密码强度实时反馈的视觉变化**
-  - 不测理由:工具能力——Claude in Chrome 无法在每次按键时精确捕获密码强度颜色变化
+  - 不测理由:工具能力——Browser Use 无法在每次按键时精确捕获密码强度颜色变化
   - 已知风险:用户可能看不到弱密码提示而创建弱密码
   - 替代手段:用 INV-S3 保证后端拒绝弱密码;无前端实时反馈测试
   - 建议补救路径:下期用 Playwright 在每次输入后断言色彩 class 切换

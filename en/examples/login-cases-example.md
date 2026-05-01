@@ -2,8 +2,19 @@
 
 > This is a test case example corresponding to `login-spec-example.md`.
 > Showcases key fields of test case document: Resource Dependency Matrix / Scenario Pattern Coverage Self-Check /
-> Operator-mode / Screenshot points / Destructive.
+> Codex-tool-plan / viewport evidence / Screenshot points / Destructive.
 > For simplicity, only 5 representative TCs are shown; real situations would have 10+.
+
+## Quick Feature Test Usage
+
+If the request is only "verify the login button submits" or "check the error message appears", Coordinator can choose Quick Feature Test:
+
+- Browser Use opens `/login` and records the actual viewport.
+- Run one success or failure login path.
+- Collect screenshot, console/dialog summary, and compact failure classification.
+- Do not force full spec / Inspector documents.
+
+The rest of this file shows the Full Flow Test form.
 
 ## Coverage Summary
 
@@ -36,7 +47,7 @@ to test rate limiting, need failures accumulated to 5. This "intentional depende
 | Equivalence class (invalid input representative: email format error) | ⚠ | Tool capability — front-end HTML5 type=email validation blocks submission, backend never receives invalid email |
 | Boundary value (password length 8 / 64) | ⚠ | Not tested this period — see §3.4b engineering boundary (password strength real-time feedback) |
 | XSS injection test (`<script>` input) | ✗ | Not listed in spec §3.4a; but INV-S2 indirectly covers (response does not expose internal errors) |
-| Form disabled state visual toggle | ✓ | TC-004 (after account locked, button turns gray, Operator-mode A) |
+| Form disabled state visual toggle | ✓ | TC-004 (after account locked, button turns gray, requires Browser Use + Screenshot Review) |
 
 ### Pattern 2: User authentication / session management (marked in spec §4)
 
@@ -66,6 +77,16 @@ to test rate limiting, need failures accumulated to 5. This "intentional depende
 | Server 5xx error | ⚠ | Same as above, requires mock |
 | Rate limit (429) response handling | ✓ | TC-004 |
 
+## Codex Execution Contract
+
+- **Default viewport**: desktop 1280x800. If a Codex small-window screenshot is used for auxiliary observation, report it as `small-codex-viewport evidence` and do not use it as direct desktop layout-failure evidence.
+- **Browser Use**: default for login form interaction, error message observation, and disabled button state.
+- **Playwright Script**: stable reruns and data assertions for successful login, cookies, sessions, and rate-limit counters.
+- **Browser Use + Screenshot Review**: error style, disabled button visual state, form layout.
+- **Computer Use**: not needed in this example unless native file picker, download folder, or desktop popup appears.
+- **Supabase Verify**: auxiliary sessions / rate_limit server_state verify only if the project uses Supabase.
+- **API/Security Supplemental**: email enumeration and illegal-state security supplements; never replaces normal login UI trigger.
+
 ## Test Cases
 
 ### TC-001: Registered user logs in with correct password successfully
@@ -74,9 +95,10 @@ to test rate limiting, need failures accumulated to 5. This "intentional depende
 - **References**: B1, INV-C1, INV-C3
 - **Method applied**: Equivalence Partitioning - valid input representative
 - **Destructive**: yes
-- **Operator-mode**: B
+- **Codex-tool-plan**: Playwright Script + Supabase Verify
+- **Viewport target**: desktop 1280x800
 
-<!-- Main path only asserts data transmission correctness (URL / cookie / SQL), no visual judgment → mode B pure Playwright -->
+<!-- Main path mainly asserts URL / cookie / SQL data correctness → Playwright Script, with Supabase Verify only for server_state when applicable -->
 
 **Preconditions**
 
@@ -120,9 +142,10 @@ to test rate limiting, need failures accumulated to 5. This "intentional depende
 - **References**: B2, INV-X1
 - **Method applied**: Equivalence Partitioning - wrong password representative
 - **Destructive**: yes (failed counter +1)
-- **Operator-mode**: C
+- **Codex-tool-plan**: Browser Use + Screenshot Review + Playwright Script + Supabase Verify
+- **Viewport target**: desktop 1280x800
 
-<!-- both verify backend "sessions not increased" (data) and test front-end "error message style" (visual) → mode C -->
+<!-- Verify backend "sessions not increased" (data) and front-end "error message style" (visual) → Browser Use / Screenshot Review / Playwright combination -->
 
 **Screenshot points**
 
@@ -172,9 +195,10 @@ to test rate limiting, need failures accumulated to 5. This "intentional depende
 - **References**: B3, INV-X1
 - **Method applied**: Test equivalent behavior invariant
 - **Destructive**: yes (failed counter +1)
-- **Operator-mode**: B
+- **Codex-tool-plan**: Playwright Script + API/Security Supplemental
+- **Viewport target**: desktop 1280x800
 
-<!-- Pure data assertion: verify response_status / body / time same as TC-002 → mode B -->
+<!-- Pure data assertion: verify response_status / body / time same as TC-002 → Playwright + API/Security Supplemental -->
 
 **Preconditions**
 
@@ -212,9 +236,10 @@ to test rate limiting, need failures accumulated to 5. This "intentional depende
 - **References**: B4
 - **Method applied**: Boundary Value Analysis - boundary 5
 - **Destructive**: yes (user state becomes locked)
-- **Operator-mode**: C
+- **Codex-tool-plan**: Browser Use + Screenshot Review + Playwright Script
+- **Viewport target**: desktop 1280x800
 
-<!-- both verify backend locked_until field (data) and see button turns gray visual toggle (render) → mode C -->
+<!-- Verify backend locked_until field (data) and button visual disabled state (rendering) → Playwright + Screenshot Review -->
 
 **Screenshot points**
 
@@ -266,9 +291,10 @@ to test rate limiting, need failures accumulated to 5. This "intentional depende
 - **References**: INV-X1
 - **Method applied**: Right-BICEP - Cross-check
 - **Destructive**: no (only compare results of TC-002 and TC-003)
-- **Operator-mode**: B
+- **Codex-tool-plan**: Playwright Script + API/Security Supplemental
+- **Viewport target**: desktop 1280x800
 
-<!-- Cross-TC compare response consistency, pure data → mode B -->
+<!-- Cross-TC compare response consistency, pure data → Playwright + API/Security Supplemental -->
 
 **Preconditions**
 

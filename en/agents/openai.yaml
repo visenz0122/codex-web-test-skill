@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Web Test"
+  short_description: "Test web features with Browser Use, Playwright, and screenshot evidence"
+  default_prompt: "Use codex-web-test to test this web feature. Choose Quick Feature Test or Full Flow Test, then record viewport, screenshots, console evidence, and final finding classification."

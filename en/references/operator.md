@@ -10,7 +10,7 @@ Your responsibility is to **faithfully execute** test cases that have passed rev
 - Startup instructions(required) — Starting at line 8
 - Core Principle 1: E2E perspective(required) — Starting at line 18
 - Core Principle 2: Honest recording(required)
-- Workflow(§0-6, §2 splits by Operator-mode A/B/C) — Starting at line 100
+- Workflow(§0-6, §2 selects execution method by Codex-tool-plan) — Starting at line 100
 - Distinction between failure and anomaly
 - Specific things you cannot do
 
@@ -114,39 +114,42 @@ For each TC, you do four things:
 4. Record all observed phenomena, including things the test case didn't explicitly require(anomalies)
 
 **While reading the test case, also check**:
-- That TC's `Operator-mode` field(A / B / C) — determines what tool to use next
-- That TC's `Screenshot points` field(modes A and C must have) — determines where to take screenshots
+- That TC's `Codex-tool-plan` field — determines what tool to use next
+- That TC's `Viewport target` and `Evidence to collect` fields — determine screenshot/trace/console/server_state evidence
+- Legacy `Operator-mode` field (if present) — compatibility reference only, never overrides `Codex-tool-plan`
 
-### 2. Select execution method by Operator-mode
+### 2. Select execution method by Codex-tool-plan
 
-Each TC's `Operator-mode` field determines how you run:
+Each TC's `Codex-tool-plan` field determines how you run:
 
-| Mode | How to run | Section |
+| Plan item | How to run | Section |
 |----|------|----|
-| **A: LLM Browser** | Use Claude in Chrome / browser-use type tools to operate browser in real-time | §2.A |
-| **B: Playwright** | Generate .spec.ts script, run with Playwright engine | §2.B |
-| **C: Hybrid** | Playwright runs business + saves screenshots, then LLM reads screenshots to judge visuals | §2.C |
+| **Browser Use** | Use Codex browser tool to operate the web UI, inspect visible state, collect screenshot/console/dialog evidence | §2.A |
+| **Playwright Script** | Generate .spec.ts script, run with Playwright engine, collect trace and assertions | §2.B |
+| **Browser Use + Screenshot Review** | Use real browser screenshots for visual/layout/rendering judgment; may be paired with Playwright screenshots | §2.C |
+| **Computer Use** | Use desktop automation only for OS-level or outside-browser actions | §2.D |
+| **Supabase Verify** | Use only for setup/schema discovery/server_state verification when project uses Supabase | §2.E |
+| **API/Security Supplemental** | Run security supplement probes separately from ordinary UI trigger execution | §2.F |
 
-If TC **doesn't fill** `Operator-mode` field — this is Cartographer's oversight, **mark SKIPPED + reason "Operator-mode missing"**,
+If TC **doesn't fill** `Codex-tool-plan` field — this is Cartographer's oversight, **mark SKIPPED + reason "Codex-tool-plan missing"**,
 don't default-choose one yourself(to avoid your choice conflicting with Cartographer's design intent).
 
-#### 2.A Mode A: LLM Browser(Claude in Chrome / browser-use)
+#### 2.A Browser Use
 
-Suitable for visual / rendering / UX type tests.
+Default for web UI function tests.
 
 Execution method:
-1. Use browser automation tool provided by host environment(Claude in Chrome / Claude Code's `--chrome` / other computer-use type)
-2. You **don't need** to write Playwright code yourself or start docker
-3. Tool can like people "view page, find button, click, fill form" — just tell tool your intent(corresponding to test case trigger), no need to write selector
-4. After steps specified in `Screenshot points`, **actively take screenshots and save** to path specified in TC's `save_to`
-5. After running all Steps, go back and read saved screenshots, **output judgment for each `llm_judges` question**(✅ / ❌ + brief description)
+1. Use Codex browser automation to view page, find controls, click, fill forms, navigate, and inspect visible state.
+2. Record viewport actual size before screenshots.
+3. Collect console errors, dialogs, and obvious network failures when available.
+4. If `Screenshot points` exist, save screenshots to the requested path and answer each `llm_judges` question(✅ / ❌ + brief description).
 
 **Strict requirement**: Steps must be completed via browser tool — no API / SSE / SQL shortcuts allowed.
 See "Core Principle 1" at top of this document.
 
 When tool doesn't support some operation(such as precisely triggering IME state), **mark SKIPPED + tool capability reason**, don't use API as alternative.
 
-#### 2.B Mode B: Playwright
+#### 2.B Playwright Script
 
 Suitable for input/output / data flow / business logic / regression type tests.
 
@@ -170,41 +173,38 @@ Generate script directly using LLM's own capability based on TC description. If 
 - Failure reason is selector instability / timing issue → Adjust script and rerun
 - Failure reason is "tested code really has a bug" → Mark FAILED and report
 
-#### 2.C Mode C: Hybrid(default recommended)
+#### 2.C Browser Use + Screenshot Review
 
-Most commonly used mode — suitable for scenarios that need both data correctness testing and visual rendering testing(chatbot / CRUD / profile etc.).
+Suitable for visual layout, Markdown/rendering fidelity, responsive behavior, and screenshot-based evidence.
+It can run directly through Browser Use, or consume screenshots produced by Playwright Script.
 
-Execution flow(**Plan X**: Playwright saves screenshots + LLM post-processing judgment, **no rerun**):
+Execution flow:
 
-```
-Phase 1(Playwright automatic execution):
-  1. Generate Playwright script based on TC description(same as 2.B)
-  2. In the script, after steps specified in Screenshot points insert:
-       await page.screenshot({path: 'screenshots/TC-005-after-send.png'});
-  3. Execute npx playwright test
-  4. Collect results: Whether Steps succeeded + SQL / API verify results + saved screenshot files
-
-Phase 2(LLM post-processing):
-  1. Read saved screenshot files(image_view or equivalent method)
-  2. For each screenshot, sequentially answer questions in llm_judges
-  3. Output judgment results: ✅ / ❌ + brief description
-
-Merge report:
-  - Playwright part: All Steps PASSED + SQL verify passed
-  - LLM screenshot judgment: judges 1 ✅, judges 2 ✅, judges 3 ❌(bubble layout misaligned)
-  - Comprehensive status: FAILED(because one visual judgment failed)
-```
+1. Before each screenshot, set/confirm the target viewport if the environment supports it.
+2. Save the screenshot at the path specified in `Screenshot points`.
+3. Record actual viewport and intent for that screenshot.
+4. Answer each `llm_judges` question with ✅ / ❌ + brief description.
+5. If Playwright produced the screenshot, do not rerun the scenario just for visual judgment; review the saved screenshot.
 
 **Key implementation points**:
-- Screenshots must be **actively generated** in Playwright script — not manually supplemented later
-- LLM reading screenshots is **post-processing**, not rerunning business flow
-- Comprehensive status determination: Playwright part + LLM screenshot judgment **any failure = FAILED**
+- Desktop layout evidence defaults to `1280x800` or `1440x900`.
+- Small Codex-window screenshots must be marked `small-codex-viewport evidence` and cannot directly prove desktop layout bugs.
+- If any visual judgment fails, the TC may fail even when DOM/API assertions passed.
 
-#### Selection of three modes is not Operator's job
+#### 2.D Computer Use
 
-Cartographer has already marked `Operator-mode` when writing each TC in Phase 2 — you strictly execute according to field, don't re-choose.
-If after execution you feel the choice was wrong(e.g., marked B but has visual assertions, needs screenshot judgment), **note clearly in execution report**,
-let humans consider whether to adjust during review, don't temporarily change mode yourself.
+Use only for OS-level or outside-browser actions: native file picker, download folder, desktop popup, cross-app movement.
+Do not use Computer Use for ordinary web clicks inside the page; use Browser Use instead.
+
+#### 2.E Supabase Verify
+
+Use only as helper for setup, schema discovery, test data, and server_state verification when the project uses Supabase.
+Supabase must not replace the browser trigger for the tested functionality.
+
+#### 2.F API/Security Supplemental
+
+Use for explicit security supplement cases: authorization bypass, illegal state transition, XSS/API-level probes, direct endpoint misuse.
+Keep these separate from ordinary E2E trigger steps and label them as supplemental in the report.
 
 ### 2.5 Handle multimodal input(only when test case has file_inputs)
 

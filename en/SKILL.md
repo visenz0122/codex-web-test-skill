@@ -1,12 +1,15 @@
 ---
-name: spec-driven-test
-description: Use specification-based testing methodology for end-to-end testing of web applications. Use this skill when users request "test this feature", "check this feature completeness", "do E2E testing on this project", "test this web app with an agent", or directly mention spec-driven-test / specification-based testing. This skill also applies to scenarios where users want to automatically generate test specs and test cases from code, then execute tests through browser automation. Even if users don't explicitly mention "spec" or "test case", if they want to systematically and automatically test a specific feature of a web project, this skill should be used.
+name: codex-web-test
+description: Codex-first skill for web feature tests, E2E tests, and acceptance tests. Use when the user asks to test/check/verify a web feature, inspect a page, run Browser Use/Computer Use testing, or mentions codex-web-test / spec-driven-test. Use Quick Feature Test for small checks and Full Flow Test for acceptance or large flows. Emphasizes Browser Use / Playwright Script / Computer Use boundaries, viewport evidence, screenshots/console evidence, setup/teardown, and post-test finding classification.
 ---
 
-# Spec-Driven Test
+# Codex Web Test
 
-Use specification-based testing methodology for end-to-end testing of web applications.
-The entire process is completed through collaboration of three agents: **Cartographer** reads code to generate specs and test cases, **Inspector** reviews test cases using methodologies, **Operator** executes tests in real browsers. Two rounds of human review ensure quality.
+Codex-first web feature testing skill.
+
+It keeps the rigor of specification-based testing, but does not force every request through the heavy flow:
+- **Quick Feature Test**: single-feature verification with Browser Use, viewport records, screenshots, console/dialog evidence, and compact feedback.
+- **Full Flow Test**: large-flow or acceptance testing coordinated by Coordinator, with Cartographer specs/cases, independent Inspector review, Operator execution, and Coordinator final review.
 
 ---
 
@@ -16,6 +19,10 @@ This is a file-based skill—you **do not need to read all reference files at on
 
 **Identify your role and only read the corresponding main file**:
 
+- **Coordinator / Test Lead role** → Read `references/coordinator.md`
+  + Read first for any testing request
+  + Choose Quick Feature Test or Full Flow Test
+  + Route Codex tools, manage viewport evidence, and classify final findings
 - **Cartographer role** → Read `references/cartographer.md` (read sections by phase, see TOC at top of file)
   + Phases 0 / 1 / 2 / 2.5 / 3—only read the current phase section
   + After identifying matching scenario patterns at end of phase 1, **only read the matching** `references/scenarios/<corresponding-file>.md`, don't read all
@@ -33,10 +40,40 @@ The real working rules are in each agent's reference file. **Load as needed** to
 
 ---
 
+## Codex Test Modes
+
+### Quick Feature Test
+
+Use for one button, page, form, local interaction, or smoke test after a change. Do not force full spec / test cases / Inspector.
+
+```
+User specifies feature
+        ↓
+Coordinator chooses Quick
+        ↓
+Read necessary code + confirm service/URL
+        ↓
+Browser Use opens page + records viewport
+        ↓
+Run real user path + collect screenshot/console/dialog evidence
+        ↓
+Coordinator outputs finding classification + retest advice
+```
+
+### Full Flow Test
+
+Use for large tasks, complex flows, acceptance, permissions/data/agent workflows, or repeatable regression.
+
 ## Overall Workflow
 
 ```
 User specifies what feature to test
+        ↓
+┌───────────────────────────────────────┐
+│ Coordinator                            │
+│ Choose Full + confirm scope/tools/     │
+│ viewport/data                          │
+└───────────────────────────────────────┘
         ↓
 ┌───────────────────────────────────────┐
 │ Cartographer Phase 0                  │
@@ -88,17 +125,24 @@ User specifies what feature to test
         ↓
 ┌───────────────────────────────────────┐
 │ Operator                              │
-│ Execute test cases in real browser    │
+│ Execute test cases with Codex tools    │
 │ Output execution report                │
+└───────────────────────────────────────┘
+        ↓
+┌───────────────────────────────────────┐
+│ Coordinator Final Review               │
+│ Classify bugs / environment / tool     │
+│ limits / retest advice                 │
 └───────────────────────────────────────┘
 ```
 
 ---
 
-## Three Agent Responsibilities
+## Four Role Responsibilities
 
 | Agent | Role | What to See | What Not to See |
 |------|-----|------|--------|
+| **Coordinator / Test Lead** | Coordinator | User goal + project state + tool capability + final report | Does not replace Operator's browser execution |
 | **Cartographer** | Cartographer | Code + specs + test cases + Inspector feedback | (no restrictions) |
 | **Inspector** | Inspector | Specs + test cases + methodologies | **do not see code** |
 | **Operator** | Operator (simulating real user) | Test cases + actual browser state | **do not make correctness judgments + Steps do not shortcut via API** |
@@ -107,100 +151,49 @@ User specifies what feature to test
 
 Each agent's detailed guidance is in the corresponding reference file:
 
+- Enter Coordinator role → Read `references/coordinator.md`
 - Enter Cartographer role → Read `references/cartographer.md`
 - Enter Inspector role → Read `references/inspector.md`
 - Enter Operator role → Read `references/operator.md`
 
 ---
 
-## Operator Hybrid Execution Mode (Playwright + LLM Screenshot Judgment)
+## Codex Tool Plan
 
-### Core Concept
+Every Full Flow Test case must include `Codex-tool-plan`. The old `Operator-mode: A/B/C` field is legacy compatibility only and cannot replace the tool plan.
 
-Operator adopts **hybrid execution mode** by default—neither pure LLM real-time browser operation nor pure Playwright scripts.
-The two tools cooperate with division of labor, **letting each tool do what it does best**:
+| Tool / plan item | Use for | Do not use for |
+|----|----|----|
+| **Browser Use** | Default for web UI feature testing: click, type, navigate, observe page state, collect screenshots, console/dialog evidence | Replacing Playwright repeatable regression scripts when stable reruns are needed |
+| **Playwright Script** | Large flows, repeatable regression, trace, batch assertions, DOM/API/DB verification around UI-triggered behavior | Replacing user-trigger actions with direct API calls |
+| **Browser Use + Screenshot Review** | Visual layout, Markdown/rendering fidelity, responsive checks, screenshot-based evidence | Declaring desktop layout bugs from small Codex window screenshots |
+| **Computer Use** | OS-level or outside-browser actions: native file picker, download folder, desktop popup, cross-app movement | Clicking normal web buttons inside the page |
+| **Supabase Verify** | Setup, schema discovery, test data creation, server_state verification when the project uses Supabase | Becoming the subject of the skill or replacing UI triggers |
+| **API/Security Supplemental** | Authorization bypass, illegal state transition, XSS/API-level security supplement | Ordinary E2E trigger steps |
 
-| Tool | Excels at | Does Not Excel at |
-|----|--------|--------|
-| **Playwright** | Input/output layer (data in data out), DOM assertions, SQL/API verification, replayable, extremely low token cost | Visual/UX judgment, "does it look right" semantic understanding |
-| **LLM viewing screenshots** (computer-use) | Visual judgment, UI design/UX, Markdown/emoji/font rendering fidelity | Precise data assertions, loop execution, replayable |
+### Viewport Discipline
 
-Hybrid mode logic: **Playwright runs business workflow + leaves screenshots at key moments + LLM post-processes reading screenshots for visual judgment**.
-This is approach X (Playwright leaves screenshots + LLM post-processes), **not** approach Y (scenario runs twice).
+- Screenshot evidence must record viewport width/height and test intent.
+- Desktop layout tests default to `1280x800` or `1440x900`.
+- A Codex small-window screenshot cannot be used as direct desktop layout-failure evidence; mark it as `small-codex-viewport evidence`.
+- Responsive conclusions must separate desktop / tablet / mobile evidence.
 
-### Three TC Types (Operator-mode field)
+### Required TC Fields
 
-When Cartographer writes each TC in phase 2, **must** mark the `Operator-mode` field, choose one of three:
+- **`Codex-tool-plan`**: primary tool, supplemental tools, evidence to collect, and rationale.
+- **`Viewport target`**: desktop/tablet/mobile size or "not layout-sensitive".
+- **`Evidence to collect`**: screenshot, console, dialog, network, trace, server_state.
+- **`Screenshot points`**: only when visual/rendering evidence is required.
+- **`Operator-mode`**: optional legacy field; if present, it must not conflict with `Codex-tool-plan`.
 
-| Mode | Applicable Scenario | Execution Method |
-|----|--------|--------|
-| **A: LLM browser** (Claude in Chrome / browser-use) | Test visual / rendering / UX / exploratory | LLM operates browser in real-time + reads screenshots for judgment |
-| **B: Playwright** | Test input/output / data flow / business logic / regression | Generate .spec.ts script, Playwright engine executes |
-| **C: Hybrid** (default recommended) | Both need data correctness and visual verification (e.g., chatbot message rendering, Markdown processing) | Playwright runs business workflow + leaves screenshots at key moments, LLM post-processes reading screenshots for judgment |
-
-**Determining factors**:
-- Test point is "data transmission correctness" → B
-- Test point is "visual/rendering/UX" → A
-- Test point needs both data and visual → C (most chatbot / CRUD / profile functionalities are C)
-
-### Hybrid Mode C Execution Flow
-
-```
-TC-005: Send Markdown message, verify rendering + backend storage
-
-Phase 1 (Playwright auto-execution):
-  1. Browser navigates to /app/agent
-  2. Enter "**important**\n# title" in textarea
-  3. Click send button
-  4. Wait for SSE stream to complete
-  5. 📸 Take screenshot and save to screenshots/TC-005-after-send.png  ← screenshot node
-  6. SQL verify: SELECT content FROM messages → should be "**important**\n# title"
-
-Phase 2 (LLM post-processing):
-  - Read screenshots/TC-005-after-send.png
-  - Visual judgment: is "important" in the bubble bold? is "# title" a large header?
-  - Output screenshot judgment results to execution-report
-
-Merged Report:
-  - Playwright trace: All Steps PASSED
-  - LLM screenshot judgment: Bold ✅, Title ✅
-  - Combined status: PASSED
-```
-
-### Two New Required Fields in TC (in test-cases-template.md)
-
-- **`Operator-mode`**: A / B / C
-- **`Screenshot points`** (only for mode A and C): list at which steps to take screenshots, and what LLM should judge for each screenshot
-
-Example:
-
-```yaml
-Operator-mode: C
-
-Screenshot points:
-  - after_step: 5  # after SSE stream complete
-    save_to: screenshots/TC-005-after-send.png
-    llm_judges:
-      - "Is Markdown **important** in the bubble rendered as bold <strong> element?"
-      - "Is # title in the bubble rendered as <h1> large header?"
-      - "Is overall bubble layout normal (no misalignment, text not overflowing)?"
-```
-
-### Inspector Does Not Review Operator-mode Tool Selection
-
-Inspector does not question Cartographer's choice of A/B/C—this is an engineering decision, not a spec/methodology issue.
-Inspector only reviews:
-- Whether TC filled in `Operator-mode` (not filled → P0)
-- Whether mode A and C TCs filled in `Screenshot points` (not filled but expected involves visual assertions → P1)
-
-See `references/operator.md` workflow, and `templates/test-cases-template.md` field format.
+Inspector reviews whether `Codex-tool-plan`, viewport evidence, and screenshot points are internally consistent. See `references/operator.md` and `templates/test-cases-template.md`.
 
 ---
 
 ## Agent Instance Isolation Rules (execution-time architecture)
 
-The skill's three roles are not just logical roles—**they should run in different agent instances**,
-which is the execution-layer guarantee for isolating independence.
+The Full Flow roles are not just logical roles. **Inspector should run in an independent agent instance**,
+which is the execution-layer guarantee for review independence.
 
 ### Inspector Must Run in Independent Agent Instance (mandatory)
 
@@ -215,14 +208,14 @@ it will unconsciously defend Cartographer's design, significantly reducing revie
 
 | Environment | Recommended | Backup |
 |------|--------|--------|
-| **Claude Code** | Use subagent / Task tool to start new agent | Let user start new conversation |
+| **Codex / Claude Code** | Use subagent / Task tool to start new agent when the environment allows | Let user start new conversation |
 | **API Call** | Initiate new conversation, system prompt guides entering Inspector role | — |
 | **Claude.ai / Claude Desktop** | Let user start new conversation (regular users don't have subagent capability) | — |
 
 **Input checklist for Inspector instance**:
 1. Spec document (Cartographer phase 1 output + final version after human review)
 2. Test case document (Cartographer phase 2 output + final version after phase 2.5 file decision completes)
-3. Install spec-driven-test skill, system will guide entering Inspector role
+3. Install codex-web-test skill, system will guide entering Inspector role
 
 **Absolutely do not pass to Inspector**:
 - ❌ Code (any source code files)
@@ -280,15 +273,16 @@ Complete working example in `examples/login-spec-example.md`.
 
 ## Starting This Skill
 
-When a user requests testing a specific web feature, the agent enters **Cartographer Phase 0**:
+When a user requests testing a specific web feature, the agent enters **Coordinator / Test Lead** first:
 
-1. **What feature does the user want to test**—clarify the specific feature name (e.g., "user login", "password reset")
-2. **Where is the code**—the user should indicate project location or relevant files
-3. **How to access the test environment**—has the user already started the project? How to use browser tools? (this affects Operator phase)
+1. Decide whether this is **Quick Feature Test** or **Full Flow Test**.
+2. Clarify the feature name and scope (e.g., "user login", "password reset").
+3. Confirm code location, target URL, dev-server command, viewport target, and allowed test data actions.
+4. Select the Codex tool plan: Browser Use, Playwright Script, Screenshot Review, Computer Use, Supabase Verify, and/or API/Security Supplemental.
 
 If any of the above is unclear, ask the user. Don't immediately start reading code.
 
-Complete phase 0 protocol in `references/cartographer.md`.
+Coordinator details are in `references/coordinator.md`; Full Flow Cartographer phase 0 is in `references/cartographer.md`.
 
 ---
 
@@ -342,10 +336,13 @@ Test case document adds Resource Dependency Matrix. See `references/cartographer
 otherwise E2E degrades to API testing. Only Setup / Teardown / verify server_state allowed to use API/SQL.
 See `references/cartographer.md` phase 2 point 7 + `references/operator.md` core principle 1 + `references/inspector.md` §1.8.
 
-**12. Operator hybrid execution mode (Playwright + LLM screenshot judgment)**—
-no forced single tool. Each TC marks `Operator-mode`: A(LLM browser, suitable for visual/UX)/ B(Playwright, suitable for data flow/regression)/ C(hybrid, default recommended—Playwright runs business workflow + leaves screenshots at key moments, LLM post-processes reading screenshots for rendering judgment).
-Approach X: screenshots left during Playwright phase, LLM post-processes reading screenshots, **does not** rerun scenario.
-See "Operator Hybrid Execution Mode" section above + `references/operator.md` workflow.
+**12. Codex-tool-plan**—
+each Full Flow TC records the intended tool mix: Browser Use for web UI, Playwright Script for repeatable regression and traces, Screenshot Review for visual evidence, Computer Use only for OS-level actions, Supabase Verify only as setup/server_state support, and API/Security Supplemental for security probes.
+See "Codex Tool Plan" above + `references/operator.md`.
+
+**13. Viewport Discipline**—
+each screenshot records viewport and intent. Desktop layout evidence defaults to `1280x800` or `1440x900`; small Codex-window screenshots must be marked as limited evidence.
+See `references/coordinator.md` and `templates/execution-report-template.md`.
 
 ---
 
@@ -375,13 +372,13 @@ Complete selection logic in `references/inspector.md` §2.
 - `examples/login-spec-example.md` — User login spec example (three-layer structure, §3.4 breakdown, §3.5 setup, logical rationale)
 - `examples/login-cases-example.md` — Corresponding test case example (Resource Dependency Matrix, scenario pattern self-checks, 5 representative TCs)
 
-**Complex feature examples (chatbot, core)**—demonstrates complete application of hybrid mode C:
+**Complex feature examples (chatbot, core)**—demonstrates Full Flow Test with Browser Use, Playwright Script, Screenshot Review, viewport evidence, and Coordinator Final Review:
 - `examples/chatbot-spec-example.md` — Lightweight chatbot spec (dialog-style UI + async streaming + LLM agent + frontend rendering fidelity multi-mode overlay)
-- `examples/chatbot-cases-example.md` — Corresponding test cases (Operator-mode A/B/C all used, complete Screenshot points)
-- `examples/chatbot-execution-report-example.md` — Execution report example (Playwright trace summary + actual LLM screenshot judgment segment fill-in)
+- `examples/chatbot-cases-example.md` — Corresponding test cases (`Codex-tool-plan`, viewport, complete Screenshot points)
+- `examples/chatbot-execution-report-example.md` — Execution report example (viewport evidence + Playwright trace + Screenshot Review + Coordinator Final Review)
 
 **Strongly recommended**: When Cartographer writes TCs involving frontend rendering fidelity in phase 2, **must read chatbot-cases-example.md**—
-TC-002 inside is the standard example of hybrid mode C.
+TC-002 inside is the standard example of combining Playwright Script with Screenshot Review.
 
 ---
 

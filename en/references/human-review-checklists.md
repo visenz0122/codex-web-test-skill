@@ -136,6 +136,17 @@ Open actual page, cross-check with test case document:
 > This part Inspector can't do — Inspector doesn't see actual page, only test cases and spec.
 > You are the only role that can do "page vs test cases" comparison.
 
+**Codex tool plan and viewport evidence**
+
+- [ ] Does each Full Flow TC have `Codex-tool-plan`, not only the legacy `Operator-mode` field?
+- [ ] Is Browser Use the default for normal web UI actions?
+- [ ] Is Computer Use limited to OS-level or outside-browser actions?
+- [ ] If Supabase appears, is it only setup/schema/server_state verification, not the main theme?
+- [ ] Do screenshot-based TCs record viewport target and actual viewport?
+- [ ] If a screenshot came from a small Codex window, is it marked as `small-codex-viewport evidence`?
+- [ ] Are desktop / tablet / mobile conclusions separated instead of mixed into one visual judgment?
+- [ ] If desktop layout failed, is there desktop viewport evidence such as 1280x800 or 1440x900?
+
 **Rationale reasonableness(check Inspector Feedback Log)**
 
 Open the `Inspector Feedback Log` section in test case document, check each:

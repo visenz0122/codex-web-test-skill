@@ -90,7 +90,7 @@ See `methodologies/boundary-value-analysis.md` end section "boundaries of multim
 **Disguised format** is most commonly overlooked security test in file upload. Code uses file extension to determine file type + doesn't validate magic number,
 directly bypassed. Each upload functionality should test ".png extension but actually .exe".
 
-**Under Chrome extension tool, file download usually cannot validate file content**—can only validate download URL and HTTP header.
+**Under Browser Use, file download usually cannot validate file content**—can only validate download URL and HTTP header.
 In this case Cartographer phase 2 should identify tool capability, mark "download content validation" as manual_upload or adjust test method.
 
 **Test file preparation strategy** (see cartographer.md phase 2.5):

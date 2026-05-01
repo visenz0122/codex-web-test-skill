@@ -10,7 +10,7 @@
 - 启动说明(必读)— 第 8 行起
 - 核心原则 1:E2E 视角(必读)— 第 18 行起
 - 核心原则 2:诚实记录(必读)
-- 工作流程(§0-6,§2 按 Operator-mode 分流 A/B/C)— 第 100 行起
+- 工作流程(§0-6,§2 按 Codex-tool-plan 分流)— 第 100 行起
 - 失败 vs 意外的区分
 - 你不能做的具体事
 
@@ -21,7 +21,8 @@
 和 Inspector 不同,**Operator 不强制独立 agent 实例**——可以在原 Cartographer conversation 继续运行(出题人执行测试,对题目细节理解最深)。
 诚实性由 E2E 视角约束(核心原则 1)保证,不依赖 context 隔离。
 
-唯一不变:严格按已审过的用例执行,**Steps 必须走浏览器 UI,不允许 API 捷径**。
+唯一不变:严格按已审过的用例执行,**普通 E2E Steps 必须走浏览器 UI,不允许 API 捷径**。
+`API/Security Supplemental` 是例外,但必须在用例中单独标注,不能伪装成普通 E2E。
 
 ---
 
@@ -114,97 +115,89 @@ setup 失败和测试失败是两件不同的事:
 4. 记录所有观察到的现象,包括用例没明确要求的(anomalies)
 
 **读用例时同时检查**:
-- 该 TC 的 `Operator-mode` 字段(A / B / C)——决定下一步用什么工具
-- 该 TC 的 `Screenshot points` 字段(模式 A 和 C 必有)——决定在哪些步骤后留截图
+- 该 TC 的 `Codex-tool-plan` 字段——决定执行工具组合
+- 该 TC 的 `Viewport target` 字段——决定截图证据是否可用于桌面/移动判断
+- 该 TC 的 `Evidence to collect` 字段——决定要收集截图、console、dialog、network、trace、server_state 等哪类证据
+- 该 TC 的 `Screenshot points` 字段——决定在哪些步骤后留截图
+- 旧版 `Operator-mode` 字段(如存在)——只作为兼容参考,不能覆盖 `Codex-tool-plan`
 
-### 2. 按 Operator-mode 选执行方式
+### 2. 按 Codex-tool-plan 选执行方式
 
-每个 TC 的 `Operator-mode` 字段决定你怎么跑:
-
-| 模式 | 怎么跑 | 章节 |
-|----|------|----|
-| **A: LLM 浏览器** | 用 Claude in Chrome / browser-use 类工具实时操作浏览器 | §2.A |
-| **B: Playwright** | 生成 .spec.ts 脚本,用 Playwright 引擎跑 | §2.B |
-| **C: 混合** | Playwright 跑业务 + 留截图,然后 LLM 读截图判断视觉 | §2.C |
-
-如果 TC **没填** `Operator-mode` 字段——这是 Cartographer 的疏忽,**标 SKIPPED + 理由 "Operator-mode 缺失"**,
+如果 TC **没填** `Codex-tool-plan` 字段——这是 Cartographer 的疏忽,**标 SKIPPED + 理由 "Codex-tool-plan 缺失"**,
 不要自己默认选一个跑(避免你的选择和 Cartographer 设计意图不一致)。
 
-#### 2.A 模式 A:LLM 浏览器(Claude in Chrome / browser-use)
+#### 2.A Browser Use
 
-适合视觉 / 渲染 / UX 类测试。
-
-执行方式:
-1. 用宿主环境提供的浏览器自动化工具(Claude in Chrome / Claude Code 的 `--chrome` / 其他 computer-use 类)
-2. 你**不需要**自己写 Playwright 代码或启动 docker
-3. 工具能像人一样"看页面、找按钮、点击、填表"——只需告诉工具你的意图(对应用例的 trigger),不需要写 selector
-4. 在 `Screenshot points` 指定的步骤后,**主动截图保存**到 TC 指定的 `save_to` 路径
-5. 跑完所有 Steps 后,回头读保存的截图,**对每个 `llm_judges` 问题输出判断**(✅ / ❌ + 简短描述)
-
-**严格要求**:Steps 必须通过浏览器工具完成——不允许走 API / SSE / SQL 等捷径。
-详见本文档顶部"核心原则 1"。
-
-工具不支持某操作(如精确触发 IME 状态)时,**标 SKIPPED + 工具能力理由**,不要用 API 替代。
-
-#### 2.B 模式 B:Playwright
-
-适合输入输出 / 数据流 / 业务逻辑 / 回归类测试。
+Browser Use 是 Codex 里网页功能测试的默认首选。
 
 执行方式:
-1. **基于 TC 的描述生成 Playwright 脚本**(.spec.ts)
-   - 直接用 LLM 自己的能力生成,不需要预设模板
-   - 把 Steps 翻译为 Playwright 代码:`page.goto()` / `page.locator(...).fill(...)` / `page.click(...)` / `expect(...).toBeVisible()` 等
-   - 把 Setup actions / Teardown actions 翻译为 `test.beforeEach` / `test.afterEach`
-   - 把 Expected 中的 server_state verify(SQL / API)用 `request.get()` / DB client 调用实现
-2. 把脚本保存到工作目录(如 `tests/generated/TC-005.spec.ts`)
-3. 用 `npx playwright test tests/generated/TC-005.spec.ts` 执行
-4. 解读 trace.zip / Playwright 报告,产出 execution-report
+1. 打开目标 URL,记录当前 viewport。
+2. 如果用例声明 desktop viewport,优先尝试 `1280x800` 或 `1440x900`。
+3. 通过真实浏览器 UI 完成 Steps:点击、输入、滚动、键盘组合、等待页面稳定。
+4. 按 `Evidence to collect` 收集 DOM/可见文本、截图、console、dialog、URL/client state。
+5. 如果 viewport 过小,截图必须标注 `small-codex-viewport evidence`。
 
-**重要原则**(同核心原则 1):**Steps 在 Playwright 中也必须用 UI 操作**——
-- 用 `page.locator('button').click()`,**不要**直接 `page.request.post('/api/...')` 代替按钮点击
-- 用 `page.fill('input', value)`,**不要**直接调内部状态
-- API 调用只能用于 Setup / Teardown / verify
+#### 2.B Browser Use + Screenshot Review
 
-**Operator 不需要预设 Playwright 知识**——
-基于 TC 描述用 LLM 自身的能力直接生成脚本即可。如果生成的脚本失败:
-- 失败原因属于 selector 不稳定 / timing 问题 → 调整脚本重跑
-- 失败原因属于"被测代码真有 bug" → 标 FAILED 报告
+适合视觉 / 渲染 / UX / 响应式判断。
 
-#### 2.C 模式 C:混合(默认推荐)
+执行方式:
+1. 用 Browser Use 完成真实用户路径。
+2. 在每个 `Screenshot points` 后保存截图。
+3. 对每个 `llm_judges` 问题输出 ✅ / ❌ / ⚠️ + 简短描述。
+4. 判断时必须说明 viewport 是否影响结论。
 
-最常用的模式——适合既要测数据正确性,又要测视觉渲染的场景(chatbot / CRUD / 个人主页等)。
+如果截图来自小 Codex 窗口,不能直接把桌面布局判为失败;应标记为"需要 desktop viewport 复测"或仅判定移动/小窗口体验。
 
-执行流程(**方案 X**:Playwright 留截图 + LLM 后处理判断,**不重跑**):
+#### 2.C Playwright Script
 
-```
-第 1 阶段(Playwright 自动执行):
-  1. 按 TC 描述生成 Playwright 脚本(同 2.B)
-  2. 在脚本里,在 Screenshot points 指定的步骤后插入:
-       await page.screenshot({path: 'screenshots/TC-005-after-send.png'});
-  3. 执行 npx playwright test
-  4. 收集结果:Steps 是否成功 + SQL / API verify 结果 + 保存的截图文件
+适合大型验收、稳定复跑、trace、批量断言。
 
-第 2 阶段(LLM 后处理):
-  1. 读保存的截图文件(image_view 或等价方式)
-  2. 对每张截图,逐个回答 llm_judges 中的问题
-  3. 输出判断结果:✅ / ❌ + 简短描述
+执行方式:
+1. 基于 TC 生成 `.spec.ts` 脚本。
+2. Steps 仍翻译为 UI 操作:`page.goto()` / `locator().fill()` / `click()` 等。
+3. Setup / Teardown / server_state verify 可以使用 API/DB/Supabase client。
+4. 执行 `npx playwright test ...`,收集 trace/report/失败截图。
+5. 如果 TC 同时有视觉判断,脚本必须在 `Screenshot points` 指定步骤主动截图,然后由 LLM 后处理判断。
 
-合并报告:
-  - Playwright 部分:Steps 全部 PASSED + SQL verify 通过
-  - LLM 截图判断:judges 1 ✅、judges 2 ✅、judges 3 ❌(气泡布局错位)
-  - 综合状态:FAILED(因为有一项视觉判断失败)
-```
+#### 2.D Computer Use
 
-**关键实现要点**:
-- 截图必须在 Playwright 脚本中**主动生成**——不是手动后补
-- LLM 读截图是**后处理**,不重跑业务流程
-- 综合状态判定:Playwright 部分 + LLM 截图判断**任一失败 = FAILED**
+Computer Use 只用于 Browser Use 覆盖不到的 OS 级或浏览器外动作:
+- 系统文件选择器
+- 下载目录/本地文件检查
+- 原生系统弹窗
+- 跨 App 操作
 
-#### 三种模式的选择不是 Operator 的事
+禁止把 Computer Use 当作更方便的网页点击工具。如果网页内可以用 Browser Use 完成,优先 Browser Use。
 
-Cartographer 阶段 2 写每个 TC 时已经标好了 `Operator-mode`——你严格按字段执行,不替它重新选。
-如果你执行后觉得选错了(如标 B 但有视觉断言,需要截图判断),**在执行报告里写明**,
-让人类 review 时考虑是否调整,不要自己临时改模式。
+#### 2.E Supabase Verify
+
+Supabase Verify 只做辅助:
+- 列 schema / tables / migrations / Edge Functions
+- 验证 server_state
+- 帮助 setup / teardown 测试数据
+
+禁止用 Supabase 操作触发被测功能。trigger 必须按用例类型走 UI,除非该 TC 明确是 `API/Security Supplemental`。
+
+#### 2.F API/Security Supplemental
+
+这是安全补充测试,不是普通 E2E。
+
+适用:
+- 直接调用 API 测越权
+- 绕过 UI 提交非法字段
+- 触发非法状态转移
+- 检查后端是否信任客户端字段
+
+要求:
+- 用例必须显式标 `Codex-tool-plan: API/Security Supplemental`
+- 报告中单独归类,不要和普通 E2E PASSED/FAILED 混在一起
+- 不得把 API/Security Supplemental 当成普通功能成功路径的替代
+
+#### 工具选择不是 Operator 的事
+
+Cartographer 已经在 TC 中标了 `Codex-tool-plan`。你严格按字段执行。
+如果你执行时发现工具计划明显不适合,在报告里写明"tool-plan mismatch",标 SKIPPED 或 FAILED,让 Coordinator / 人类决定是否调整。
 
 ### 2.5 处理多模态输入(仅当用例有 file_inputs 时)
 

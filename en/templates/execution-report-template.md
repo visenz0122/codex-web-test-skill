@@ -16,7 +16,8 @@ Core principle: Operator only records faithfully, makes no judgment on correctne
 **Executed by**: Operator
 **Started at**: <ISO 8601>
 **Finished at**: <ISO 8601>
-**Tools used**: <e.g. Claude in Chrome / Claude Code browser integration>
+**Tools used**: <Browser Use / Playwright Script / Screenshot Review / Computer Use / Supabase Verify / API/Security Supplemental>
+**Artifact root**: <path to screenshots, traces, generated specs, logs>
 
 ## Summary
 
@@ -61,6 +62,9 @@ Operator does not need to start the environment (that's the user's responsibilit
 - Browser: <e.g. Chrome 122>
 - Test target URL: <e.g. http://localhost:3000>
 - Test user identity: <e.g. logged-in state, not logged in, specific permissions>
+- Viewport target: <desktop 1280x800 / desktop 1440x900 / tablet / mobile>
+- Viewport actual: <width>x<height>
+- Viewport evidence note: <normal desktop evidence / small-codex-viewport evidence / not layout-sensitive>
 
 ## Results
 
@@ -69,7 +73,9 @@ Operator does not need to start the environment (that's the user's responsibilit
 - **Status**: PASSED / FAILED / SKIPPED
 - **Duration**: <e.g. 3.2s>
 - **References**: B1, INV-C1
-- **Operator-mode used**: A / B / C (corresponding to Operator-mode field in test case document)
+- **Codex-tool-plan used**: <tools actually used>
+- **Operator-mode used**: <optional legacy compatibility field>
+- **Viewport actual**: <width>x<height>
 
 <!-- If PASSED, the following sections can be brief -->
 <!-- If FAILED or has anomalies, document in detail -->
@@ -88,10 +94,10 @@ Operator does not need to start the environment (that's the user's responsibilit
 - (if any) Screenshot: <path>
 - (if any) Console errors: <content>
 
-**Playwright trace summary** (only when Operator-mode is B or C)
+**Playwright trace summary** (only when Playwright Script is used)
 
 <!--
-When B/C mode runs Playwright, Playwright produces trace.zip / report.html.
+When Playwright Script is used, Playwright produces trace.zip / report.html.
 Give key summary here, not the entire report.
 -->
 
@@ -102,7 +108,7 @@ Give key summary here, not the entire report.
 - Trace file: `test-results/TC-001/trace.zip` (for later debugging)
 - Key screenshot: `test-results/TC-001/test-failed-1.png` (auto-generated failure screenshot)
 
-**LLM screenshot judgment** (only when Operator-mode is A or C)
+**Screenshot Review** (when Browser Use + Screenshot Review or Playwright screenshot review is used)
 
 <!--
 For each screenshot point defined in the test case's Screenshot points, record the judgment result after LLM analyzes the image.
@@ -202,3 +208,31 @@ Operator must honestly declare what it did and did not do.
 - Did not judge whether a failed test case is a "bug in the system being tested" or "test case incorrectly written" — that is human's work
 - Did not attempt to fix test cases or system code — outside Operator's responsibility
 - Did not access database to verify server_state — unless the test case's expected explicitly indicates a verifiable method and Operator has permission to access
+- Did not use small Codex-window screenshots as desktop layout-failure evidence unless explicitly marked `small-codex-viewport evidence`
+
+## Viewport Evidence
+
+| Purpose | Target viewport | Actual viewport | Evidence path | Conclusion boundary |
+|---|---:|---:|---|---|
+| <desktop layout / mobile layout / visual rendering> | <1280x800> | <1280x800> | <screenshot path> | <valid desktop evidence / small-codex-viewport evidence / needs retest> |
+
+## Console / Dialog / Network Summary
+
+- Console errors:
+- Dialogs:
+- Network failures:
+- Downloads / OS-level events:
+
+## Failure Classification Draft
+
+| Finding | Category | Evidence | Retest recommendation |
+|---|---|---|---|
+| <finding> | product bug / test script bug / environment/setup issue / tool limitation / data pollution / needs manual review | <evidence path or summary> | <next retest> |
+
+## Coordinator Final Review
+
+- Overall result:
+- Tool boundary check:
+- Viewport conclusion:
+- Data cleanup / pollution risk:
+- Retest priority:

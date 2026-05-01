@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Web Test"
+  short_description: "用 Browser Use、Playwright 和截图证据测试网页功能"
+  default_prompt: "使用 codex-web-test 测试这个网页功能。先判断 Quick Feature Test 还是 Full Flow Test,并记录 viewport、截图、console 和最终反馈分类。"

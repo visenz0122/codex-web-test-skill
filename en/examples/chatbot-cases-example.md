@@ -1,8 +1,19 @@
 # Test Cases: AI Chatbot Core Dialogue
 
 > This is a test case example corresponding to `chatbot-spec-example.md`.
-> **Core showcase**: Operator-mode A / B / C all used + Screenshot points complete format.
+> **Core showcase**: Full Flow Test with `Codex-tool-plan`, viewport evidence, and complete Screenshot points.
 > For simplicity, only 4 representative test cases are shown; real situations would have 8-10.
+
+## Quick Feature Test Usage
+
+If the change only touches the send button, input disabled state, or one reply rendering case, Coordinator can choose Quick Feature Test:
+
+- Browser Use opens `/chat` and records the actual viewport.
+- Send one message and observe streaming / completed state.
+- Collect screenshot, console/dialog/network summary.
+- Output compact finding classification without forcing full spec / Inspector.
+
+The rest of this file shows the Full Flow Test form for AI chatbot acceptance.
 
 ## Coverage Summary
 
@@ -48,7 +59,7 @@
 | system prompt not leaked to client | ✓ | TC-005 (INV-S2 test) |
 | Factual correctness of LLM responses | OOS | spec §3.4a business boundary (owned by content review team) |
 
-### Pattern 4: Front-end rendering fidelity (critical pattern — must use Operator-mode C)
+### Pattern 4: Front-end rendering fidelity (critical pattern — must use Screenshot Review)
 
 | Self-check item | Status | Corresponding TC / Reason |
 |---------|----|----|
@@ -77,6 +88,16 @@
 | LLM service 5xx | ✓ | TC-003 (mock returns error event) |
 | Input validation (empty message) | ✓ | TC-004 |
 
+## Codex Execution Contract
+
+- **Default viewport**: desktop 1280x800. Screenshots must record actual viewport; Codex small-window screenshots are only `small-codex-viewport evidence`.
+- **Browser Use**: preferred for sending messages, observing streaming UI, error prompts, and empty-message button state.
+- **Browser Use + Screenshot Review**: Markdown, bubble layout, long text wrapping, error color, responsive checks.
+- **Playwright Script**: SSE waits, repeatable flow, trace, DOM/SQL/API assertions.
+- **Computer Use**: only for downloads, desktop popups, or native file picker; not needed by default.
+- **Supabase Verify**: auxiliary messages/auth/session/state verification only if the project uses Supabase.
+- **API/Security Supplemental**: XSS, system prompt leakage, and direct illegal requests; normal message sending still starts from browser UI.
+
 ## Test Cases
 
 ### TC-001: User sends plain message, sees complete streaming reply
@@ -85,13 +106,13 @@
 - **References**: B1, INV-C1, INV-C2
 - **Method applied**: Equivalence Partitioning - valid input representative
 - **Destructive**: yes (adds new messages records)
-- **Operator-mode**: C
+- **Codex-tool-plan**: Browser Use + Screenshot Review + Playwright Script + Supabase Verify
+- **Viewport target**: desktop 1280x800
 
 <!--
-mode C:
 - Data dimension: verify messages table new records, textarea clears (Playwright precise)
 - Visual dimension: verify user bubble + assistant bubble display simultaneously, send button changes to "Generating..." during streaming (LLM screenshot judgment)
-Both are needed → C
+Both are needed → Browser Use / Screenshot Review / Playwright combination
 -->
 
 **Screenshot points**
@@ -154,10 +175,11 @@ Both are needed → C
 - **References**: B2, INV-S1, INV-X1
 - **Method applied**: Scenario pattern "Front-end rendering fidelity" direct test
 - **Destructive**: yes
-- **Operator-mode**: C
+- **Codex-tool-plan**: Browser Use + Screenshot Review + Playwright Script + Supabase Verify
+- **Viewport target**: desktop 1280x800
 
 <!--
-This TC is a **typical representative of mixed mode** ——
+This TC is a **typical representative of a Codex tool combination** ——
 Backend must verify stored string is raw Markdown (data);
 Front-end must verify Markdown truly renders as bold / heading / list (visual).
 Pure Playwright checking for <strong> elements can verify "did it render", but cannot capture "is the font actually bold" — must use LLM to view screenshot.
@@ -214,12 +236,13 @@ Pure Playwright checking for <strong> elements can verify "did it render", but c
 - **References**: B4
 - **Method applied**: State Transition - streaming → error
 - **Destructive**: yes
-- **Operator-mode**: C
+- **Codex-tool-plan**: Browser Use + Screenshot Review + Playwright Script
+- **Viewport target**: desktop 1280x800
 
 <!--
-mode C:
 - Data dimension: verify SSE error event backend recording, message status becomes error (SQL)
 - Visual dimension: error message styling (red), button restore styling (LLM view screenshot)
+→ Browser Use / Screenshot Review / Playwright combination
 -->
 
 **Screenshot points**
@@ -271,12 +294,12 @@ mode C:
 - **References**: B5
 - **Method applied**: Boundary Value - length=0
 - **Destructive**: no
-- **Operator-mode**: A
+- **Codex-tool-plan**: Browser Use + Screenshot Review
+- **Viewport target**: desktop 1280x800
 
 <!--
-mode A pure LLM browser:
 - Test points are purely visual/interactive layer (send button disabled, placeholder hint), no backend data transmission
-- No need for Playwright, LLM viewing screenshots is more intuitive
+- No need for Playwright, Browser Use + Screenshot Review is more intuitive
 -->
 
 **Screenshot points**
@@ -331,14 +354,14 @@ both prevent empty message send, but **user experience differs**, spec B5 strict
 - **References**: INV-S1, INV-C3
 - **Method applied**: Security test — injection attack vector
 - **Destructive**: yes (adds new messages records with malicious strings)
-- **Operator-mode**: C
+- **Codex-tool-plan**: Browser Use + Screenshot Review + Playwright Script + API/Security Supplemental
+- **Viewport target**: desktop 1280x800
 
 <!--
-mode C:
 - Data dimension: verify INV-S1 backend stores `<script>` string as-is (SQL query content)
 - Visual dimension: verify INV-C3 render layer sanitize, page **displays as literal string** and alert **does not pop** (LLM screenshot + monitor dialog event)
 
-This is a standard example of mixed mode capturing "DOM passes ≠ visual passes" and "storage vs rendering layered defense".
+This is a standard example of Codex tool combination capturing "DOM passes ≠ visual passes" and "storage vs rendering layered defense".
 -->
 
 **Screenshot points**

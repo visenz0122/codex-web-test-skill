@@ -81,7 +81,7 @@ don't need to test all, but **at least** test:
 
 **Tool support for simulating exceptions**:
 - Playwright supports offline / route mock / status code injection, fully support various exception simulation
-- Claude in Chrome has limited support—usually can only wait for real exception to occur
+- Browser Use has limited support—usually can only wait for real exception to occur
 - If tool doesn't support, should mark ⚠ in self-check table + tool capability rationale
 
 ## Common Overlaps

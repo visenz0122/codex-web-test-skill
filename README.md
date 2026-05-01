@@ -1,133 +1,194 @@
-# spec-test.skill
+# Codex Web Test Skill
 
-> A skill that helps small teams and individual developers run rigorous end-to-end tests on web applications, using a specification-based testing methodology.
+> A Codex skill for testing web applications with real browser evidence: quick feature checks when you just need confidence, and full spec-driven acceptance flows when the work matters.
 >
-> 一个 skill,帮助小团队和个人开发者用规约驱动测试(specification-based testing)的方法对 web 应用做严谨的端到端(E2E)测试。
+> 一个面向 Codex 的网页功能测试 skill:小改动走快速真实浏览器验证,重要链路走规约驱动的完整验收测试。
 
----
+## Why This Exists
 
-## English
+Small teams and solo developers often skip proper E2E testing because writing good cases, setting up data, running browsers, and collecting evidence all take time. Codex can help, but only if the testing workflow is explicit about scope, tools, viewport, evidence, and post-test classification.
 
-### What this skill does
+**Codex Web Test Skill** turns "test this feature" into a practical QA workflow inside Codex:
 
-`spec-driven-test` turns "write some E2E tests" into a disciplined three-stage workflow run by three cooperating Claude agents, with two human review gates in the middle:
+- Use **Browser Use** for real UI interaction.
+- Use **Playwright Script** when a flow needs stable reruns, traces, or batch assertions.
+- Use **Screenshot Review** for layout, Markdown, responsive, and rendering fidelity.
+- Use **Computer Use** only for OS-level actions such as native file pickers, download folders, or desktop dialogs.
+- Use **Supabase Verify** only as setup/schema/server-state support, not as the subject of the test.
+- Separate product bugs from test script bugs, environment issues, tool limits, data pollution, and manual-review items.
 
-1. **Cartographer** reads your code and produces a written **spec** of the feature under test, then translates that spec into concrete **test cases**.
-2. **Inspector** reviews those test cases against established testing methodologies (boundary value analysis, equivalence partitioning, decision tables, state transition, use case testing, Right-BICEP) and a checklist of common scenario patterns, returning P0 / P1 / P2 graded feedback.
-3. **Operator** drives a real browser (Playwright or Claude in Chrome) to execute every test case and produce an evidence-backed execution report with screenshots.
+## Two Test Modes
 
-Two human review checkpoints (one after the spec, one after the test cases) keep a person in the loop on the things that matter — *is the spec actually right?* and *are these the tests we want to run?* — without making humans do the busywork.
+### Quick Feature Test
 
-### Why it exists
+Use this when you changed one page, one button, one form, or one interaction and want fast confidence.
 
-E2E testing is the layer most often skipped by small teams and individual developers because writing good tests by hand is slow, and "vibe-coded" tests miss the unhappy paths. This skill is designed to give a single developer the rigor of a dedicated QA process: structured specs, methodology-driven test design, real-browser execution, and a reproducible report — without needing a separate QA team.
+Typical flow:
 
-### Two language editions
+1. Coordinator chooses Quick mode.
+2. Codex reads only the necessary code/context.
+3. Browser Use opens the target URL.
+4. Codex records viewport, screenshots, console/dialog/network evidence.
+5. Codex returns a compact result with findings and retest advice.
 
-This repository ships the skill in two editions. They are content-equivalent — pick whichever language your team works in.
+No full spec, no Inspector, no heavy ceremony.
 
-| Edition | Path | Use when |
-|---|---|---|
-| **Chinese (中文)** | [`zh/`](./zh) | Your team writes specs and reviews in Chinese, or your codebase comments are mostly Chinese. |
-| **English** | [`en/`](./en) | Your team works in English, or you want to share the skill with international collaborators. |
+### Full Flow Test
 
-Each edition contains the full skill: `SKILL.md`, `references/` (the agent rulebooks, methodology references, and scenario patterns), `templates/`, and `examples/`.
+Use this for acceptance testing, multi-page flows, permission/data-heavy behavior, AI chatbot flows, or regression that should be repeatable.
 
-### How to install
+Typical flow:
 
-To use this skill in Claude Code or Cowork, copy the edition you want into your skills folder. For example:
+1. **Coordinator / Test Lead** chooses scope, mode, tools, viewport, evidence, and test-data policy.
+2. **Cartographer** reads the code and writes the behavior spec.
+3. Human reviews the spec.
+4. Cartographer generates test cases with `Codex-tool-plan`, viewport targets, evidence points, setup, and teardown.
+5. **Inspector** reviews the cases independently against testing methodology and Codex-specific constraints.
+6. Human reviews the final cases.
+7. **Operator** executes through Browser Use / Playwright / Screenshot Review / Computer Use / Supabase Verify as appropriate.
+8. Coordinator writes the final review and classifies findings.
 
-```sh
-cp -r en /path/to/your/skills/spec-driven-test
-```
+## What Makes It Codex-First
 
-Or zip the edition's folder into a `.skill` bundle and upload via the Cowork skill installer.
+This is not a generic E2E prompt. It is tuned for how Codex actually works:
 
-### Contributing — feedback and improvements are very welcome
+- **Viewport discipline**: desktop screenshots default to `1280x800` or `1440x900`; small Codex-window screenshots are marked as `small-codex-viewport evidence` and cannot be used as direct desktop-layout failure proof.
+- **Tool routing**: Browser Use is preferred for web UI actions; Computer Use is reserved for browser-outside work.
+- **Evidence-first reporting**: screenshots, console, dialogs, network, traces, server-state checks, and limitations are recorded explicitly.
+- **Quick vs Full split**: simple feature testing stays lightweight; large acceptance flows keep full spec/test-case rigor.
+- **Post-test classification**: findings are grouped into `product bug`, `test script bug`, `environment/setup issue`, `tool limitation`, `data pollution`, and `needs manual review`.
 
-This skill is a living document. **If you have a reasonable suggestion, we will adopt it.** That includes — but is not limited to:
+## Install
 
-- Bugs you hit while running the workflow on a real project
-- Wording that is unclear, ambiguous, or wrong
-- Missing scenario patterns (e.g. you tested a feature whose pattern wasn't covered)
-- Methodology references that are inaccurate or could be clearer
-- Translation issues in either edition (English ↔ Chinese parity)
-- New examples drawn from real projects
-- Improvements to the templates
+Choose the language edition you want and copy it into your Codex skills folder.
 
-**How to contribute:**
-
-- **Report a usage issue or bug**: open a GitHub Issue. Tell us what you were testing, which agent you were running, what happened, and what you expected. Logs or transcript snippets help a lot.
-- **Suggest an improvement**: open an Issue with the `enhancement` label, or open a Pull Request directly.
-- **Submit a translation fix**: PRs welcome — please update *both* `zh/` and `en/` so the two editions stay in sync.
-- **Add a real-world example**: PRs welcome under `zh/examples/` and `en/examples/`.
-
-We're a small project. Reasonable feedback and PRs from anyone are appreciated and will be taken seriously.
-
-### License & questions
-
-If you have a usage question that isn't a bug, please still open an Issue — odds are someone else has the same question.
-
----
-
-## 中文
-
-### 这个 skill 是做什么的
-
-`spec-driven-test` 把"写点 E2E 测试"这件事拆成一套严谨的三阶段流程,由三个 agent 协作完成,中间还有两道人类 review 把关:
-
-1. **Cartographer(制图师)** 读你的代码,产出被测功能的**规约**(spec),再把规约翻译成具体的**测试用例**。
-2. **Inspector(检查员)** 用一套测试方法论(边界值分析、等价类划分、决策表、状态迁移、用例测试、Right-BICEP)和场景模式清单审查测试用例,输出 P0 / P1 / P2 分级反馈。
-3. **Operator(执行员)** 在真实浏览器里(Playwright 或 Claude in Chrome)跑每一条测试用例,产出附带截图证据的执行报告。
-
-两道人类 review(一道在规约后,一道在用例后)把"规约是不是对的"和"这些用例是不是我们想要的"这种关键判断留给人,但所有繁琐工作都交给 agent 做。
-
-### 为什么要有这个 skill
-
-E2E 测试是小团队和个人开发者最容易跳过的一层——手写好测试太慢,"凭感觉测一下"又会漏掉异常路径。这个 skill 想让一个独立开发者也能享有一个完整 QA 流程的严谨度:结构化规约、方法论驱动的用例设计、真实浏览器执行、可复现的报告——而不需要专门搭一支 QA 团队。
-
-### 两个语言版本
-
-这个仓库提供中英两个内容等价的版本,按你团队的工作语言选一个就行。
-
-| 版本 | 路径 | 适用场景 |
-|---|---|---|
-| **中文** | [`zh/`](./zh) | 团队用中文写规约和评审,或代码注释多数是中文。 |
-| **English** | [`en/`](./en) | 团队用英文工作,或者要把 skill 分享给国际协作者。 |
-
-每个版本都是完整 skill:`SKILL.md`、`references/`(三个 agent 各自的规则手册、方法论、场景模式参考)、`templates/`、`examples/`。
-
-### 怎么安装
-
-要在 Claude Code 或 Cowork 里用这个 skill,把对应版本目录复制到你的 skills 目录,例如:
+One-command local install:
 
 ```sh
-cp -r zh /path/to/your/skills/spec-driven-test
+scripts/install-local.sh zh
 ```
 
-或者把对应版本目录打成 `.skill` zip 包,通过 Cowork 的 skill 安装界面上传。
+Chinese edition:
 
-### 贡献 —— 任何合理意见都会采纳
+```sh
+cp -R zh ~/.codex/skills/codex-web-test
+```
 
-这个 skill 是活文档。**只要是合理的反馈和建议,我们都会认真考虑并采纳。** 包括但不限于:
+English edition:
 
-- 你在真实项目里跑这套流程时踩到的 bug
-- 表述不清楚、有歧义或者直接写错的地方
-- 缺失的场景模式(比如你测了某个功能,发现现有模式没覆盖到)
-- 方法论参考有不准确或可以更清晰的地方
-- 中英两个版本之间的翻译不一致
-- 来自真实项目的新示例
-- 模板的改进建议
+```sh
+cp -R en ~/.codex/skills/codex-web-test
+```
 
-**怎么贡献:**
+If your Codex home is customized:
 
-- **反馈使用问题或 bug**:提 GitHub Issue。告诉我们你在测什么、当时跑的是哪个 agent、发生了什么、你期望发生什么。能附日志或对话片段最好。
-- **提改进建议**:开一个 Issue 标 `enhancement`,或者直接发 Pull Request。
-- **修翻译**:欢迎 PR——请同时改 `zh/` 和 `en/`,保持两个版本同步。
-- **加真实案例**:欢迎 PR 到 `zh/examples/` 和 `en/examples/`。
+```sh
+cp -R zh "$CODEX_HOME/skills/codex-web-test"
+```
 
-这是个小项目。来自任何人的合理反馈和 PR 都会被认真对待。
+Restart Codex or start a new Codex session so the updated skill list is loaded.
 
-### 用法问题
+## Usage
 
-如果你有使用上的疑问,不是 bug,也请开 Issue——大概率别人也有同样的问题。
+Quick test:
+
+```text
+用 codex-web-test 测一下登录按钮，重点看错误提示和 console。
+```
+
+Full flow:
+
+```text
+用 codex-web-test 对 AI chatbot 做完整验收测试，包含 Markdown 渲染、流式输出、错误状态、截图证据和最终反馈分类。
+```
+
+Viewport-sensitive test:
+
+```text
+用 codex-web-test 检查这个页面桌面布局，必须用 1280x800 或 1440x900 的 viewport 截图，Codex 小窗口截图只能作为辅助证据。
+```
+
+## Repository Layout
+
+```text
+.
+├── zh/                     # Chinese skill edition
+│   ├── SKILL.md
+│   ├── agents/openai.yaml
+│   ├── references/
+│   ├── templates/
+│   └── examples/
+├── en/                     # English skill edition
+│   ├── SKILL.md
+│   ├── agents/openai.yaml
+│   ├── references/
+│   ├── templates/
+│   └── examples/
+├── scripts/
+│   ├── install-local.sh      # install zh/en edition into ~/.codex/skills
+│   └── validate.sh           # static repository checks
+└── README.md
+```
+
+Each edition is a complete Codex skill. Copy either `zh/` or `en/` into your Codex skills folder.
+
+## Included Templates
+
+- `spec-template.md`: behavior spec with Codex runtime info, target URL, dev-server command, test-data source, and viewport assumptions.
+- `test-cases-template.md`: test cases with `Codex-tool-plan`, viewport targets, screenshot points, evidence plan, setup, teardown, and optional legacy `Operator-mode` compatibility.
+- `execution-report-template.md`: execution report with viewport evidence, Playwright traces, Screenshot Review, console/dialog/network summary, failure classification, and Coordinator Final Review.
+- `quick-test-report-template.md`: lightweight report for single-feature tests.
+- `judge-output-template.md`: Inspector feedback format.
+
+## Good Fits
+
+- Login, signup, session, permission, and role-based flows.
+- CRUD workflows where frontend display and backend state both matter.
+- AI chatbot / agent interfaces with streaming, Markdown, tool calls, or prompt-safety checks.
+- File upload/download flows where Browser Use and Computer Use need clear boundaries.
+- Visual/rendering checks where small Codex window screenshots could otherwise cause false layout conclusions.
+
+## Not A Fit
+
+- Unit tests.
+- Load/performance testing.
+- Pixel-perfect visual regression testing.
+- Security audits that require a dedicated professional security methodology.
+- Pure API testing where no browser user path exists.
+
+## Contributing
+
+Issues and pull requests are welcome. Useful contributions include:
+
+- New scenario patterns from real projects.
+- Clearer tool-boundary rules for Browser Use, Playwright, Computer Use, Supabase, or API/security supplements.
+- Better examples for common web app flows.
+- Translation fixes between Chinese and English editions.
+- Template improvements that make reports easier to act on.
+
+When changing behavior, please update both `zh/` and `en/` editions when possible, then run:
+
+```sh
+scripts/validate.sh
+```
+
+## 中文简介
+
+**Codex Web Test Skill** 是一个给 Codex 使用的网页测试 skill。它把"测一下这个功能"拆成两种模式:
+
+- **Quick Feature Test**:适合按钮、页面、表单、局部交互、smoke test。默认用 Browser Use 做真实浏览器验证,记录 viewport、截图、console/dialog/network 证据,输出紧凑问题清单。
+- **Full Flow Test**:适合完整验收、大型链路、权限/数据密集功能、AI chatbot、可复跑回归。它会生成规约、测试用例、Inspector 审查、Operator 执行报告和 Coordinator Final Review。
+
+这个 skill 特别强调:
+
+- Browser Use 是网页功能测试默认首选。
+- Playwright Script 用于稳定复跑、trace、批量断言。
+- Computer Use 只用于文件选择器、下载目录、桌面弹窗等浏览器外动作。
+- Supabase Verify 只作为 setup/schema/server_state 辅助。
+- 每张截图必须记录 viewport;Codex 小窗口截图不能直接当作桌面布局失败证据。
+
+安装中文版本:
+
+```sh
+scripts/install-local.sh zh
+```

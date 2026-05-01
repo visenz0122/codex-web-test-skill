@@ -76,7 +76,7 @@ All wait steps must explicitly give timeout—this is a hard requirement at desi
 **Infinite loop trap**: if test case writes "wait draft → click confirm → wait reasoning reply", but doesn't write timeout and escape condition,
 when LLM doesn't produce expected content in this round, Operator will keep waiting → infinite loop.
 
-**Simulating network exceptions** is very difficult under some test tools—Claude in Chrome usually cannot precisely simulate "network disconnection".
+**Simulating network exceptions** is very difficult under some test tools—Browser Use usually cannot precisely simulate "network disconnection".
 If test case needs to test this, usually requires Playwright + offline mode, or mark manual_upload.
 
 ## Common Overlaps

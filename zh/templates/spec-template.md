@@ -27,6 +27,33 @@ Source 标注规则(易冲突字段必标):
 - 不好:"实现用户能登录"、"做一个登录功能"
 -->
 
+## 0. Codex Test Context
+
+<!--
+Codex 专用上下文字段。Full Flow Test 必填。
+这部分让 Operator / Coordinator 知道如何启动、访问、取证和判断 viewport。
+-->
+
+- **Test mode**: Full Flow Test
+- **Target URL / entry route**: <如:http://localhost:5173/login 或 /app/chat>
+- **Dev server command**: <如:npm run dev / pnpm dev / 已由用户启动>
+- **Frontend entry**: <如:src/pages/Login.vue>
+- **Backend / service entry**: <如:src/server.ts / Supabase Edge Function / 无>
+- **Data source**: <seed / fixture / setup API / SQL / Supabase / 用户手动提供>
+- **Allowed test data actions**:
+  - <如:允许创建 test_user_* 账号>
+  - <如:允许清理本轮创建的 records>
+  - <如:不允许真实发邮件,必须使用 mock>
+- **Default viewport assumption**:
+  - intent: desktop
+  - target: 1280x800 或 1440x900
+  - fallback: 如果 Codex 窗口过小,截图标注 `small-codex-viewport evidence`
+- **Codex tools expected**:
+  - Browser Use: yes / no
+  - Playwright Script: yes / no
+  - Computer Use: yes / no,仅用于 <文件选择器/下载目录/原生弹窗/无>
+  - Supabase Verify: yes / no,仅用于 <schema/server_state/setup/teardown/无>
+
 ## 1. Interface
 
 <!--
@@ -309,7 +336,7 @@ Inspector 对这类项**有干预权**:可以提 P1 建议(如"建议加 manual_
 
 - SSE 长连接稳定性专项
   - **类别**:工程边界
-  - **不测理由**:Claude in Chrome 工具不支持精确模拟"网络断开 N 秒后恢复"
+  - **不测理由**:Browser Use 工具不支持精确模拟"网络断开 N 秒后恢复"
     类的复杂时序场景
   - **已知风险**:用户在网络抖动场景下,流式输出可能丢失 / 卡死 / 无错误提示
   - **替代手段**:基础异常路径已通过 TC-XX 覆盖(模拟一次完整断开)

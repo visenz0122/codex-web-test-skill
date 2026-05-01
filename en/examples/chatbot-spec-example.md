@@ -1,6 +1,6 @@
 # Feature: AI Chatbot Core Dialogue
 
-> This is the **core example** of spec-driven-test skill — showcasing a lightweight chatbot spec,
+> This is the **core example** of codex-web-test skill — showcasing a lightweight chatbot spec,
 > covering the most common scenario pattern combinations (conversational UI + asynchronous streaming + LLM agent decision-making + front-end rendering fidelity).
 >
 > Hypothetical product: a simplified AI assistant chatbot where users input questions, backend calls LLM,
@@ -214,7 +214,7 @@ applicable to "single conversation stream" lifecycle:
   - Recommended remediation path: use Playwright to record video, human sample review
 
 - **Real network interruption simulation**
-  - Reason not to test: tool capability — Claude in Chrome not convenient for network interruption simulation
+  - Reason not to test: tool capability — Browser Use not convenient for network interruption simulation
   - Known risk: B4 (network disconnect message) may behave inconsistently in production vs test
   - Alternative: use mock backend return error event instead of real network disconnect
   - Recommended remediation path: next period use Playwright's `route.abort()` for real testing

@@ -1,6 +1,6 @@
 # Feature: User Login
 
-> This is an **example** showing what a spec designed per spec-driven-test skill paradigm looks like.
+> This is an **example** showing what a spec designed per codex-web-test skill paradigm looks like.
 > Cartographer can reference this example structure when generating specs in phase 1.
 > Note: this example assumes a fictional product, field values described are for demonstration only.
 
@@ -198,8 +198,8 @@
     check returned object's `httpOnly` and `secure` fields are true.
   - **❌ do not use** `document.cookie` (browser JS API) verification — HttpOnly cookie by definition cannot be read by JS,
     using JS verification can only confirm "cannot read", but **cannot distinguish** "HttpOnly effective" from "cookie not set at all".
-  - **Operator-mode hint**: this invariant almost requires Operator-mode B or C (needs Playwright cookies API access);
-    pure mode A (LLM browser) not convenient for verification, can mark ⚠ in scenario pattern self-check + tool capability reason
+  - **Codex-tool-plan hint**: this invariant almost requires Playwright Script (needs Playwright cookies API access);
+    pure Browser Use is not convenient for verification, can mark ⚠ in scenario pattern self-check + tool capability reason
 
 #### Server-side invariants
 
@@ -311,7 +311,7 @@ applicable to session lifecycle:
 #### 3.4b Engineering boundary (should test but cannot this period)
 
 - **Password strength real-time feedback visual change**
-  - Reason not to test: tool capability — Claude in Chrome unable to precisely capture password strength color change with each keystroke
+  - Reason not to test: tool capability — Browser Use unable to precisely capture password strength color change with each keystroke
   - Known risk: users may not see weak password hint and create weak password
   - Alternative: use INV-S3 to ensure backend rejects weak password; no frontend real-time feedback testing
   - Recommended remediation path: next period use Playwright to assert color class toggle after each input
@@ -357,4 +357,3 @@ if setup fails: Operator stops entire test, mark "setup failure" — do not atte
 - Generated at: 2026-04-26T10:00:00Z
 - Reviewed by human: yes
 - Notes: this is a manually written example to demonstrate skill paradigm, does not correspond to any actual product
-

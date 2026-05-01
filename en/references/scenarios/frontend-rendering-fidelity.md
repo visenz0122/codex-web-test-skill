@@ -94,9 +94,9 @@ Backend engineers testing backend API cannot see this kind of bug; frontend engi
 
 **Core principle**: **both frontend and backend must be observed and compared simultaneously**. Single-side assertion cannot catch this kind of bug.
 
-### Recommended Operator-mode: C (Hybrid Mode)
+### Recommended Codex-tool-plan: Browser Use + Screenshot Review / Playwright Script
 
-TCs matching this scenario pattern **almost all should mark Operator-mode: C**—
+TCs matching this scenario pattern **almost all should use `Browser Use + Screenshot Review` or `Playwright Script + Screenshot Review`**—
 because rendering fidelity simultaneously needs "backend data correctness" (Playwright precise SQL/API assertion) and "frontend rendering visual judgment" (LLM read screenshot semantic understanding).
 Pure Playwright using DOM selector to check `<strong>` / `<h1>` element can catch part of bugs, but **cannot catch these**:
 
@@ -114,7 +114,13 @@ Pure Playwright using DOM selector to check `<strong>` / `<h1>` element can catc
 ```yaml
 TC-XXX: test send Markdown message rendering
 
-Operator-mode: C  # hybrid mode
+Codex-tool-plan:
+  primary: Playwright Script
+  supplemental:
+    - Browser Use + Screenshot Review
+    - Supabase Verify  # if the project uses Supabase; otherwise use the project's own DB/API verify
+  reason: verify backend stored facts and frontend rendering fidelity together
+Viewport target: desktop 1280x800
 
 Steps:
   1. Browser input "**important**\n# title" in textarea
@@ -137,7 +143,7 @@ Expected:
 
 ### Agent Screenshot Judgment Working Mechanism
 
-Refer to SKILL.md "Operator Hybrid Execution Mode" and `references/operator.md` §2.C:
+Refer to SKILL.md "Codex Tool Plan" and the Playwright / Screenshot Review rules in `references/operator.md`:
 
 1. **Playwright phase**: Cartographer generates Playwright script, Operator runs business workflow,
    after step specified in `Screenshot points` call `await page.screenshot({path: '...'})` to save screenshot
@@ -179,7 +185,7 @@ DOM selector query `<strong>` / `<h1>` element can catch "is it rendered" level 
 - Does time display conform to user timezone (DOM is string, Playwright cannot determine "correct or not")
 - Does long text overflow bubble (DOM complete, but visually penetrated container)
 
-**So TC matching this scenario pattern almost inevitably is Operator-mode: C**—Playwright runs business workflow for backend assertion,
+**So TC matching this scenario pattern almost inevitably combines `Playwright Script` with `Screenshot Review`**—Playwright runs business workflow for backend assertion,
 Agent reads screenshot for visual judgment. See above "How to Test" section.
 
 **Do not assume "frontend framework handles these"**—React / Vue does not auto-render Markdown, not auto-convert timezone,

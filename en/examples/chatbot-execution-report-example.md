@@ -1,7 +1,7 @@
 # Execution Report: AI Chatbot Core Dialogue
 
 > This is an execution report example corresponding to `chatbot-cases-example.md`.
-> **Core showcase**: Playwright trace summary + LLM screenshot judgment section as it appears in actual reports.
+> **Core showcase**: Codex-tool-plan, viewport evidence, Playwright trace, Screenshot Review, and Coordinator Final Review as they appear in actual reports.
 > In real situations, running all 4 TCs would be longer; here we show details for 2 TCs, other TCs simplified.
 
 ## Summary
@@ -22,9 +22,12 @@
 
 ## Environment
 
-- Browser: Chrome via Claude in Chrome MCP
+- Browser: Codex Browser Use / Playwright Chromium
 - Test target URL: http://localhost:3000/chat
 - LLM mock: enabled, fixture path `tests/fixtures/pneumonia-answer.txt`
+- Viewport target: desktop 1280x800
+- Viewport actual: 1280x800
+- Viewport evidence note: all desktop layout judgments came from 1280x800 evidence; no small Codex-window screenshot was used as desktop failure evidence
 
 ## Results
 
@@ -33,7 +36,8 @@
 - **Status**: ✅ PASSED
 - **Duration**: 24.3s
 - **References**: B1, INV-C1, INV-C2
-- **Operator-mode used**: C
+- **Codex-tool-plan used**: Browser Use + Screenshot Review + Playwright Script + Supabase Verify
+- **Viewport actual**: 1280x800
 
 **Steps executed**
 
@@ -62,7 +66,7 @@
 - Failed assertions: 0 items
 - Trace file: `test-results/TC-001/trace.zip`
 
-**LLM screenshot judgment**
+**Screenshot Review**
 
 | Screenshot | Judgment question | Result | Description |
 |----|--------|----|----|
@@ -89,7 +93,8 @@
 - **Status**: ❌ FAILED (2/4 visual judgments did not pass)
 - **Duration**: 18.7s
 - **References**: B2, INV-S1, INV-X1
-- **Operator-mode used**: C
+- **Codex-tool-plan used**: Browser Use + Screenshot Review + Playwright Script + Supabase Verify
+- **Viewport actual**: 1280x800
 
 **Steps executed**
 
@@ -115,7 +120,7 @@
 - Failed assertions: 0 items
 - Trace file: `test-results/TC-002/trace.zip`
 
-**LLM screenshot judgment**
+**Screenshot Review**
 
 | Screenshot | Judgment question | Result | Description |
 |----|--------|----|----|
@@ -134,7 +139,7 @@
 - ⚠️ **Important**: DOM passes but visual fails — this is a typical "front-end rendering fidelity" problem.
   Playwright alone would pass (because it only checks for `<strong>` / `<h1>` element existence),
   but what users actually see is **unbolded "emphasis point 1" and non-enlarged "large heading"**.
-  This type of bug can only be caught by Operator-mode C — proving the value of mixed mode.
+  This type of bug can only be caught by Screenshot Review — proving the value of Browser Use / Playwright / Screenshot Review together.
 
 **Root cause suggestions for developers**
 
@@ -148,14 +153,15 @@
 
 - **Status**: ❌ FAILED (1/3 visual judgments did not pass)
 - **Duration**: 8.2s
-- **Operator-mode used**: C
+- **Codex-tool-plan used**: Browser Use + Screenshot Review + Playwright Script
+- **Viewport actual**: 1280x800
 
 **Playwright trace summary**
 
 - Passed assertions: 5 items (SSE error event received + status field updated, etc.)
 - Failed assertions: 0 items
 
-**LLM screenshot judgment**
+**Screenshot Review**
 
 | Screenshot | Judgment question | Result | Description |
 |----|--------|----|----|
@@ -174,13 +180,14 @@
 
 - **Status**: ✅ PASSED
 - **Duration**: 1.8s
-- **Operator-mode used**: A
+- **Codex-tool-plan used**: Browser Use + Screenshot Review
+- **Viewport actual**: 1280x800
 
 **Playwright trace summary**
 
-Not applicable (mode A pure LLM browser, no Playwright script).
+Not applicable (this TC used Browser Use + Screenshot Review, no Playwright script).
 
-**LLM screenshot judgment**
+**Screenshot Review**
 
 | Screenshot | Judgment question | Result |
 |----|--------|----|
@@ -217,6 +224,31 @@ None
   depends on human code review of `src/services/llm.js` to confirm.
 - **Streaming character-by-character typewriter effect**: Per spec §3.4b engineering boundary, not tested this period.
 - **emoji / long text boundary**: Not tested separately (marked ⚠ in scenario pattern self-check, not tested this period).
+
+## Viewport Evidence
+
+| Purpose | Target viewport | Actual viewport | Evidence path | Conclusion boundary |
+|---|---:|---:|---|---|
+| Desktop chat layout | 1280x800 | 1280x800 | `screenshots/TC-001-completed.png` | Valid desktop evidence |
+| Markdown rendering | 1280x800 | 1280x800 | `screenshots/TC-002-markdown.png` | Valid desktop evidence |
+| Error prompt style | 1280x800 | 1280x800 | `screenshots/TC-003-error.png` | Valid desktop evidence |
+
+No small Codex-window screenshot was used to decide desktop layout failures.
+
+## Failure Classification Draft
+
+| Finding | Category | Evidence | Retest recommendation |
+|---|---|---|---|
+| TC-002 Markdown bold / heading visual style failure | product bug | DOM passed, 1280x800 screenshot failed visually | Fix CSS, rerun TC-002 |
+| TC-003 error prompt color not warning-colored | product bug | 1280x800 screenshot showed normal gray text | Fix error style, rerun TC-003 |
+| INV-S2 cannot be directly verified | needs manual review | Operator lacks LLM mock internals | Human reviews prompt-injection/service logic |
+
+## Coordinator Final Review
+
+- **Overall result**: Full Flow Test completed; 2 product bugs, 0 test script bugs, 0 environment/setup issues.
+- **Tool boundary**: Web trigger actions were completed through Browser Use / Playwright UI operations; API did not replace user clicks.
+- **Viewport conclusion**: Visual failures came from 1280x800 desktop evidence, not Codex small-window screenshots.
+- **Retest priority**: Rerun TC-002 / TC-003 first; if Markdown container CSS changed broadly, rerun TC-001 for regression.
 
 ## Next Steps Recommendation
 

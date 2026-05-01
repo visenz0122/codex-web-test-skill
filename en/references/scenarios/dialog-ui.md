@@ -83,7 +83,7 @@ This is **most easily overlooked** category:
 
 Don't copy login's EP thinking to dialog—will write large number of meaningless "Chinese / English / number" equivalence class test cases.
 
-**IME status is very difficult to precisely trigger under automated testing tools**—most browser automation tools (Playwright, Claude in Chrome)
+**IME status is very difficult to precisely trigger under automated testing tools**—most browser automation tools (Playwright, Browser Use)
 cannot simulate IME incomplete state. If test case must test this, usually needs to mark manual_upload (let human manually test once).
 
 **Multi-turn context is core ability test of LLM agent**—don't only test single Q&A.

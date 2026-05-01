@@ -1,6 +1,6 @@
 # Feature: AI Chatbot 对话核心
 
-> 这是 spec-driven-test skill 的**核心样例**——展示一个轻量 chatbot 的规约,
+> 这是 codex-web-test skill 的**核心样例**——展示一个轻量 chatbot 的规约,
 > 涵盖最常用的场景模式叠加(对话型 UI + 异步流式 + LLM agent 决策 + 前端渲染保真度)。
 >
 > 假设的产品:一个简化的 AI 助手 chatbot,用户输入问题,后端调 LLM,
@@ -214,7 +214,7 @@
   - 建议补救路径:用 Playwright 录制视频,人类抽样审
 
 - **网络中断真实模拟**
-  - 不测理由:工具能力——Claude in Chrome 不便模拟网络中断
+  - 不测理由:工具能力——Browser Use 不便模拟网络中断
   - 已知风险:B4 (网络断开提示)可能在生产中表现与测试不一致
   - 替代手段:用 mock 后端返回 error 事件代替真实网络断开
   - 建议补救路径:下期用 Playwright 的 `route.abort()` 真实测试

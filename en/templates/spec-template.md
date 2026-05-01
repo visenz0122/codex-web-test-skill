@@ -27,6 +27,22 @@ Use short noun phrase for feature name, not action. Examples:
 - Bad: "Implement user login capability", "Making a login feature"
 -->
 
+## 0. Codex Test Context
+
+<!--
+Record runtime assumptions before the behavioral spec so Operator can reproduce the environment.
+-->
+
+- **Test mode**: Quick Feature Test / Full Flow Test
+- **Target URL**: <http://localhost:... or deployed URL>
+- **Dev server command**: <e.g. npm run dev / already running / unknown>
+- **Frontend entry**: <path or unknown>
+- **Backend entry**: <path or unknown>
+- **Test data source**: <seed script / fixture / Supabase / existing local DB / none>
+- **Allowed test data actions**: <create test account / reset table / no writes / ask first>
+- **Default viewport assumption**: <desktop 1280x800 / desktop 1440x900 / mobile / not layout-sensitive>
+- **Codex tools expected**: <Browser Use / Playwright Script / Screenshot Review / Computer Use / Supabase Verify / API/Security Supplemental>
+
 ## 1. Interface
 
 <!--
@@ -310,7 +326,7 @@ Examples:
 
 - SSE long connection stability project
   - **Category**: engineering boundary
-  - **Reason not to test**: Claude in Chrome tool cannot precisely simulate "network drops X seconds then recovers" complex timing scenarios
+  - **Reason not to test**: Browser Use cannot precisely simulate "network drops X seconds then recovers" complex timing scenarios
   - **Known risk**: users in network instability scenario may lose / hang streaming output / no error message
   - **Alternative approach**: basic exception path covered via TC-XX (simulate one complete disconnect)
   - **Suggested remedy path**: Playwright + offline mode standalone project

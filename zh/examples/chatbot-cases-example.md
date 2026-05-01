@@ -1,8 +1,19 @@
 # Test Cases: AI Chatbot 对话核心
 
 > 这是 `chatbot-spec-example.md` 对应的测试用例样例。
-> **核心展示**:Operator-mode A / B / C 三种全用上 + Screenshot points 完整格式。
+> **核心展示**:Full Flow Test 中 `Codex-tool-plan`、viewport evidence、Screenshot points 的完整格式。
 > 为了简洁,只展示 4 个代表性 TC,真实情况下会有 8-10 个。
+
+## Quick Feature Test Usage
+
+如果只是改了发送按钮、输入框禁用态、单条回复渲染,Coordinator 可以选择 Quick Feature Test:
+
+- Browser Use 打开 `/chat`,记录实际 viewport。
+- 发送一条消息,观察 streaming / completed 状态。
+- 收集截图、console/dialog/network 摘要。
+- 输出 compact finding 分类,不强制生成完整 spec / Inspector。
+
+下面展示 AI chatbot 全链路验收时的 Full Flow Test 写法。
 
 ## Coverage Summary
 
@@ -48,7 +59,7 @@
 | system prompt 不泄漏到客户端 | ✓ | TC-005(INV-S2 测试) |
 | LLM 答复内容的事实正确性 | OOS | spec §3.4a 业务边界(归内容审核团队) |
 
-### 模式 4: 前端渲染保真度(关键模式 — 必须用 Operator-mode C)
+### 模式 4: 前端渲染保真度(关键模式 — 必须用 Screenshot Review)
 
 | 必查清单项 | 状态 | 对应 TC / 理由 |
 |---------|----|----|
@@ -77,6 +88,16 @@
 | LLM 服务 5xx | ✓ | TC-003(mock 返回 error 事件) |
 | 输入校验(空消息) | ✓ | TC-004 |
 
+## Codex Execution Contract
+
+- **Default viewport**: desktop 1280x800。截图必须记录 actual viewport;小 Codex 窗口截图只能作为 `small-codex-viewport evidence`。
+- **Browser Use**: 发送消息、观察 streaming UI、错误提示、空消息按钮状态的首选工具。
+- **Browser Use + Screenshot Review**: Markdown、气泡布局、长文本折行、错误提示颜色、响应式验证。
+- **Playwright Script**: SSE 等待、可复跑链路、trace、DOM/SQL/API 断言。
+- **Computer Use**: 只在涉及下载目录、桌面弹窗或系统文件选择器时使用;本示例默认不需要。
+- **Supabase Verify**: 仅在项目使用 Supabase 时辅助验证 messages 表、auth/session、存储状态。
+- **API/Security Supplemental**: XSS、system prompt 泄漏、绕过 UI 的非法请求等安全补充;普通消息发送仍必须从浏览器 UI 触发。
+
 ## Test Cases
 
 ### TC-001: 用户发送普通消息,看到完整流式回复
@@ -85,13 +106,13 @@
 - **References**: B1, INV-C1, INV-C2
 - **Method applied**: Equivalence Partitioning - 有效输入代表
 - **Destructive**: yes(新增 messages 记录)
-- **Operator-mode**: C
+- **Codex-tool-plan**: Browser Use + Screenshot Review + Playwright Script + Supabase Verify
+- **Viewport target**: desktop 1280x800
 
 <!--
-mode C:
 - 数据维度:验证 messages 表新增、textarea 清空(Playwright 精确)
 - 视觉维度:验证用户气泡 + assistant 气泡同时显示、发送按钮在流中变"生成中..."(LLM 截图判断)
-两者都需要 → C
+两者都需要 → Browser Use / Screenshot Review / Playwright 组合
 -->
 
 **Screenshot points**
@@ -154,10 +175,11 @@ mode C:
 - **References**: B2, INV-S1, INV-X1
 - **Method applied**: 场景模式 "前端渲染保真度" 直接测试
 - **Destructive**: yes
-- **Operator-mode**: C
+- **Codex-tool-plan**: Browser Use + Screenshot Review + Playwright Script + Supabase Verify
+- **Viewport target**: desktop 1280x800
 
 <!--
-本 TC 是混合模式的**典型代表**——
+本 TC 是 `Codex-tool-plan` 组合的**典型代表**——
 后端要 verify 存储的是原始 Markdown 字符串(数据);
 前端要看 Markdown 是否真的渲染为粗体 / 标题 / 列表(视觉)。
 单纯 Playwright 检查 <strong> 元素能查"渲染了吗",但抓不到"字体加粗了吗"——必须 LLM 看截图。
@@ -214,12 +236,13 @@ mode C:
 - **References**: B4
 - **Method applied**: State Transition - streaming → error
 - **Destructive**: yes
-- **Operator-mode**: C
+- **Codex-tool-plan**: Browser Use + Screenshot Review + Playwright Script
+- **Viewport target**: desktop 1280x800
 
 <!--
-mode C:
 - 数据维度:验证 SSE error 事件后端记录、消息状态变 error(SQL)
 - 视觉维度:错误提示样式(红色)、按钮恢复样式(LLM 看截图)
+→ Browser Use / Screenshot Review / Playwright 组合
 -->
 
 **Screenshot points**
@@ -271,12 +294,12 @@ mode C:
 - **References**: B5
 - **Method applied**: Boundary Value - length=0
 - **Destructive**: no
-- **Operator-mode**: A
+- **Codex-tool-plan**: Browser Use + Screenshot Review
+- **Viewport target**: desktop 1280x800
 
 <!--
-mode A 纯 LLM 浏览器:
 - 测点完全是视觉/交互层(发送按钮 disabled、placeholder 提示),无后端数据传递
-- 不需要 Playwright,直接 LLM 看截图判断更直观
+- 不需要 Playwright,直接用 Browser Use + Screenshot Review 判断更直观
 -->
 
 **Screenshot points**
@@ -331,14 +354,14 @@ mode A 纯 LLM 浏览器:
 - **References**: INV-S1, INV-C3
 - **Method applied**: 安全测试 — 注入攻击向量
 - **Destructive**: yes(新增 messages 记录,含恶意字符串)
-- **Operator-mode**: C
+- **Codex-tool-plan**: Browser Use + Screenshot Review + Playwright Script + API/Security Supplemental
+- **Viewport target**: desktop 1280x800
 
 <!--
-mode C:
 - 数据维度:验证 INV-S1 后端原样存储 `<script>` 字符串(SQL 查 content)
 - 视觉维度:验证 INV-C3 渲染层 sanitize,页面**显示为字面字符串**且 alert **不弹出**(LLM 截图 + 监听 dialog 事件)
 
-这是混合模式抓"DOM 通过 ≠ 视觉通过"和"存储 vs 渲染分层防御"的标准范例。
+这是 Codex 工具组合抓"DOM 通过 ≠ 视觉通过"和"存储 vs 渲染分层防御"的标准范例。
 -->
 
 **Screenshot points**

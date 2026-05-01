@@ -94,9 +94,9 @@
 
 **核心原则**:**前后端必须同时观察并对比**。单侧断言抓不到这类 bug。
 
-### 推荐 Operator-mode:C(混合模式)
+### 推荐 Codex-tool-plan: Browser Use + Screenshot Review / Playwright Script
 
-匹配本场景模式的 TC,**几乎都应该标 Operator-mode: C**——
+匹配本场景模式的 TC,**几乎都应该使用 `Browser Use + Screenshot Review` 或 `Playwright Script + Screenshot Review`**——
 因为渲染保真度同时需要"后端数据正确性"(Playwright 精确 SQL/API 断言)和"前端渲染视觉判断"(LLM 看截图语义理解)。
 单纯 Playwright 用 DOM 选择器检查 `<strong>` / `<h1>` 元素能抓部分 bug,但**抓不到这些**:
 
@@ -114,7 +114,13 @@
 ```yaml
 TC-XXX: 测发送 Markdown 消息渲染
 
-Operator-mode: C  # 混合模式
+Codex-tool-plan:
+  primary: Playwright Script
+  supplemental:
+    - Browser Use + Screenshot Review
+    - Supabase Verify  # 如项目使用 Supabase;否则用项目自己的 DB/API verify
+  reason: 同时验证后端存储事实和前端渲染保真度
+Viewport target: desktop 1280x800
 
 Steps:
   1. 浏览器在 textarea 输入 "**重要**\n# 标题"
@@ -137,7 +143,7 @@ Expected:
 
 ### Agent 截图判断的工作机制
 
-参考 SKILL.md "Operator 混合执行模式"和 `references/operator.md` §2.C:
+参考 SKILL.md "Codex 工具执行计划"和 `references/operator.md` 的 Playwright / Screenshot Review 规则:
 
 1. **Playwright 阶段**:Cartographer 生成 Playwright 脚本,Operator 跑业务流程,
    在 `Screenshot points` 指定的步骤后调用 `await page.screenshot({path: '...'})` 保存截图
@@ -179,7 +185,7 @@ DOM 选择器查 `<strong>` / `<h1>` 元素能抓"渲染了吗"层面的 bug,但
 - 时间显示符合用户时区吗(DOM 是字符串,Playwright 没法判断"对不对")
 - 长文本溢出气泡了吗(DOM 完整,但视觉撞穿容器)
 
-**所以匹配本场景模式的 TC 几乎必然是 Operator-mode: C**——Playwright 跑业务流程拿后端断言,
+**所以匹配本场景模式的 TC 几乎必然要组合 `Playwright Script` 与 `Screenshot Review`**——Playwright 跑业务流程拿后端断言,
 Agent 看截图判断视觉。详见上面"怎么测"段。
 
 **不要假设"前端框架会处理这些"**——React / Vue 不自动做 Markdown 渲染、不自动做时区转换、

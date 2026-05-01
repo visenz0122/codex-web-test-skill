@@ -1,7 +1,7 @@
 # Execution Report: AI Chatbot 对话核心
 
 > 这是 `chatbot-cases-example.md` 对应的执行报告样例。
-> **核心展示**:Playwright trace 摘要 + LLM 截图判断段在实际报告中长什么样。
+> **核心展示**:Codex-tool-plan、viewport evidence、Playwright trace、Screenshot Review 和 Coordinator Final Review 在实际报告中长什么样。
 > 真实情况下 4 个 TC 全跑完会更长,这里只展示 2 个 TC 的细节,其他 TC 简略。
 
 ## Summary
@@ -22,9 +22,12 @@
 
 ## Environment
 
-- 浏览器:Chrome via Claude in Chrome MCP
+- 浏览器:Codex Browser Use / Playwright Chromium
 - 测试目标 URL:http://localhost:3000/chat
 - LLM mock:启用,fixture 路径 `tests/fixtures/pneumonia-answer.txt`
+- Viewport target:desktop 1280x800
+- Viewport actual:1280x800
+- Viewport evidence note:所有桌面布局判断均来自 1280x800;未使用小 Codex 窗口截图作为桌面失败证据
 
 ## Results
 
@@ -33,7 +36,8 @@
 - **Status**: ✅ PASSED
 - **Duration**: 24.3s
 - **References**: B1, INV-C1, INV-C2
-- **Operator-mode used**: C
+- **Codex-tool-plan used**: Browser Use + Screenshot Review + Playwright Script + Supabase Verify
+- **Viewport actual**: 1280x800
 
 **Steps executed**
 
@@ -89,7 +93,8 @@
 - **Status**: ❌ FAILED(2/4 视觉判断未通过)
 - **Duration**: 18.7s
 - **References**: B2, INV-S1, INV-X1
-- **Operator-mode used**: C
+- **Codex-tool-plan used**: Browser Use + Screenshot Review + Playwright Script + Supabase Verify
+- **Viewport actual**: 1280x800
 
 **Steps executed**
 
@@ -134,7 +139,7 @@
 - ⚠️ **重要**:DOM 通过但视觉失败——这是典型的"前端渲染保真度"问题。
   Playwright 单独跑会通过(因为它只检查 `<strong>` / `<h1>` 元素存在),
   但用户实际看到的是**未加粗的"重点 1"和不大的"大标题"**。
-  这种 bug 只能通过 Operator-mode C 抓到——证明了混合模式的价值。
+  这种 bug 只能通过 Screenshot Review 抓到——证明了 Browser Use / Playwright / Screenshot Review 组合的价值。
 
 **对开发的归因建议**
 
@@ -148,7 +153,8 @@
 
 - **Status**: ❌ FAILED(1/3 视觉判断未通过)
 - **Duration**: 8.2s
-- **Operator-mode used**: C
+- **Codex-tool-plan used**: Browser Use + Screenshot Review + Playwright Script
+- **Viewport actual**: 1280x800
 
 **Playwright trace 摘要**
 
@@ -174,11 +180,12 @@
 
 - **Status**: ✅ PASSED
 - **Duration**: 1.8s
-- **Operator-mode used**: A
+- **Codex-tool-plan used**: Browser Use + Screenshot Review
+- **Viewport actual**: 1280x800
 
 **Playwright trace 摘要**
 
-不适用(模式 A 纯 LLM 浏览器,无 Playwright 脚本)。
+不适用(本 TC 使用 Browser Use + Screenshot Review,无 Playwright 脚本)。
 
 **LLM 截图判断**
 
@@ -207,6 +214,16 @@
 
 - 无
 
+## Viewport Evidence
+
+| 用途 | 目标 viewport | 实际 viewport | 证据路径 | 结论边界 |
+|---|---:|---:|---|---|
+| 桌面聊天布局 | 1280x800 | 1280x800 | `screenshots/TC-001-completed.png` | 可作为 desktop 证据 |
+| Markdown 渲染 | 1280x800 | 1280x800 | `screenshots/TC-002-markdown.png` | 可作为 desktop 证据 |
+| 错误提示样式 | 1280x800 | 1280x800 | `screenshots/TC-003-error.png` | 可作为 desktop 证据 |
+
+本轮没有把小 Codex 窗口截图用于桌面布局失败判断。
+
 ## Skipped Test Cases
 
 无
@@ -217,6 +234,22 @@
   依赖人类对照 `src/services/llm.js` 代码确认。
 - **流式渲染逐字打字机效果**:按 spec §3.4b 工程边界,本期未测。
 - **emoji / 长文本边界**:未单独测(在场景模式自检表标 ⚠,本期不测)。
+- **小窗口截图结论**:未把 Codex 小窗口截图当作 desktop 布局 bug 证据。
+
+## Failure Classification Draft
+
+| 发现 | 分类 | 证据 | 复测建议 |
+|---|---|---|---|
+| TC-002 Markdown 粗体 / 标题视觉样式失效 | product bug | DOM 通过,1280x800 截图视觉失败 | 修 CSS 后复跑 TC-002 |
+| TC-003 错误提示颜色未应用警示色 | product bug | 1280x800 截图中错误文本为普通灰色 | 修错误样式后复跑 TC-003 |
+| INV-S2 不能直接验证 | needs manual review | Operator 无 LLM mock 内部事实源 | 人类对照服务端 prompt 注入逻辑 |
+
+## Coordinator Final Review
+
+- **整体结论**:Full Flow Test 完成;2 个 product bug,0 个 test script bug,0 个 environment/setup issue。
+- **工具边界**:网页触发动作均由 Browser Use / Playwright UI 操作完成;没有用 API 替代用户点击。
+- **Viewport 结论**:所有视觉失败来自 1280x800 desktop 证据,不是 Codex 小窗口误判。
+- **复测优先级**:先复测 TC-002 / TC-003;若修复范围涉及 Markdown 容器,补跑 TC-001 防回归。
 
 ## 下一步建议
 
